@@ -14,7 +14,7 @@ future: true
 # SNS settings
 RSS: false
 weibo_username:     胖胖三斤
-zhihu_username:     三斤
+zhihu_username:     wo-xue-mian-bing/activities
 github_username:    liaoxinyi
 twitter_username:   ThreeJin
 #facebook_username:  huxpro
