@@ -1,13 +1,13 @@
 ---
-layout: post
-title: "First Try"
-subtitle: "Don't konw what to say"
-author: "ThreeJin"
-date:2015-01-29 12:00:00
-header-img: "http://pyheuyyd7.sabkt.gdipper.com/001.jpg"
+layout:     post
+title:      "First Try"
+subtitle:   "Don't konw what to say"
+date:       2019-5-20 12:00:00
+author:     "ThreeJin"
+header-img: "img/home-bg-o.jpg"
 tags:
-  - 知乎
-
+    - 知乎
+    
 ---
 
 # 标题一。
