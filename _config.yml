@@ -1,7 +1,8 @@
 # Site settings
 title: ThreeJin    
 SEOTitle: 三斤的博客 | ThreeJin Blog
-# header-img: img/home-bg.jpg
+header-img: img/home-bg.jpg
+article-img: img/article-default.jpg
 email: liaoxinyi1994@gmail.com
 description: "快乐编程，享受人生。"
 keyword: "Java, 软件"

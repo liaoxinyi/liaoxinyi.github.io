@@ -6,7 +6,7 @@
 {% if include.type == 'post' %}
 <style type="text/css">
     header.intro-header{
-        background-image: url({% if page.header-img %}{{ page.header-img }}{% else %}"http://pyheuyyd7.sabkt.gdipper.com/article-default.jpg"{% endif %});
+        background-image: url({% if page.header-img %}{{ page.header-img }}{% else %}{{ site.baseurl }}/{{ site.article-img }}{% endif %});
         height: 227px;
         overflow: hidden;
     }
@@ -75,7 +75,7 @@
 {% endif %}
 
 {% if include.type == 'page' %}
-<header class="intro-header" style="background-image: url("http://pyheuyyd7.sabkt.gdipper.com/home-bg.jpg")">
+<header class="intro-header" style="background-image: url({{ site.baseurl }}/{{ site.article-img }})">
   <div class="container">
     <div class="row-header">
       <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
