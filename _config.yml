@@ -79,7 +79,7 @@ ba_track_id: 096fc1720f04b8333658c9a461b926bf
 # Sidebar settings
 sidebar: true                           # whether or not using Sidebar.
 sidebar-about-description: "The Happy Life of Programming<br>享受编程 快乐生活"
-sidebar-avatar: /img/ThreeJinQiQi.jpg      # use absolute URL, seeing it's used in both `/` and `/about/`
+sidebar-avatar: http://pyheuyyd7.sabkt.gdipper.com/ThreeJinQiQi.jpg      # use absolute URL, seeing it's used in both `/` and `/about/`
 
 
 
