@@ -6,7 +6,7 @@
 {% if include.type == 'post' %}
 <style type="text/css">
     header.intro-header{
-        background-image: url("http://pyheuyyd7.sabkt.gdipper.com/home-bg.jpg");
+        background-image: url({% if page.header-img %}{{ page.header-img }}{% else %}"http://pyheuyyd7.sabkt.gdipper.com/article-default.jpg"{% endif %});
         height: 227px;
         overflow: hidden;
     }
@@ -26,10 +26,10 @@
                         <a class="tag" href="{{ site.baseurl }}/archive/?tag={{ tag | url_encode }}" title="{{ tag }}">{{ tag }}</a>
                         {% endfor %}
                     </div>
-                    <h2>{{ page.title }}</h2>
+                    <h2><font color="white">{{ page.title }}</font></h2>
                     {% comment %} always create a h2 for keeping the margin {% endcomment %}
-                    <h3>{{ page.subtitle }}</h3>
-                    <span class="meta">Posted by {% if page.author %}{{ page.author }}{% else %}{{ site.title }}{% endif %} on {{ page.date | date: "%B %-d, %Y" }}</span>
+                    <h3><font color="white">{{ page.subtitle }}</font></h3>
+                    <span class="meta"><font color="white">Posted by {% if page.author %}{{ page.author }}{% else %}{{ site.title }}{% endif %} on {{ page.date | date: "%B %-d, %Y" }}</font></span>
         </div>
     </div>
 </header>
@@ -75,7 +75,7 @@
 {% endif %}
 
 {% if include.type == 'page' %}
-<header class="intro-header" style="background-image: url('{{ site.baseurl }}/{% if page.header-img %}{{ page.header-img }}{% else %}{{ site.header-img }}{% endif %}')">
+<header class="intro-header" style="background-image: url("http://pyheuyyd7.sabkt.gdipper.com/home-bg.jpg")">
   <div class="container">
     <div class="row-header">
       <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">

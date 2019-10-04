@@ -4,7 +4,7 @@ title:      "格式好难调整"
 subtitle:   "How designers learn front-end development?"
 date:       2015-10-28 12:00:00
 author:     "ThreeJin"
-header-img: "img/tag-bg.jpg"
+header-img: "http://pyheuyyd7.sabkt.gdipper.com/article-default.jpg"
 tags:
     - 格式
     - 文档
