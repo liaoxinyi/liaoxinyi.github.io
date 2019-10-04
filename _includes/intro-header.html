@@ -13,14 +13,14 @@
     div.container{
 		height: 227px;
     }
-	div.row{
-		margin:50px auto auto auto;
+	div.row-header{
+		margin:50px auto auto 50px;
     }
 </style>
 
 <header class="intro-header">
       <div class="container">
-        <div class="row">
+        <div class="row-header">
                     <div class="tags">
                         {% for tag in page.tags %}
                         <a class="tag" href="{{ site.baseurl }}/archive/?tag={{ tag | url_encode }}" title="{{ tag }}">{{ tag }}</a>
