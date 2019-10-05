@@ -7,7 +7,7 @@ email: liaoxinyi1994@gmail.com
 description: "快乐编程，享受人生。"
 keyword: "Java, 软件"
 url: "https://liaoxinyi.github.io"              # your host, for absolute URL
-baseurl: "https://liaoxinyi.github.io"                             # for example, '/blog' if your blog hosted on 'host/blog'
+baseurl: ""                             # for example, '/blog' if your blog hosted on 'host/blog'
 
 # Publish posts or collection documents with a future date.
 future: true
