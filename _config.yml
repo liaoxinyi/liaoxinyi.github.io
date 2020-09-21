@@ -2,6 +2,8 @@
 cdn:
 jsdelivr:
 enabled: true
+# repository
+repository:liaoxinyi
 # Site settings
 title: ThreeJin    
 SEOTitle: 三斤的博客 | ThreeJin Blog
