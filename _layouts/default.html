@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+{% assign assets_base_url = site.url %} {% if site.cdn.jsdelivr.enabled %} {% assign assets_base_url = "https://cdn.jsdelivr.net/gh/" | append: site.repository %} {% endif %}
 <html lang="en">
 
 {% include head.html %}
