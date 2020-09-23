@@ -4,7 +4,7 @@ title:      "从挖石油到敲代码"
 subtitle:   "Oil or Program, that is a question"
 date:       2019-10-06 16:22:00
 author:     "ThreeJin"
-header-img: "img/article-default.jpg"
+header-img: "https://i.loli.net/2020/09/23/cpdwJsZi93e8LNB.png"
 tags:
     - 闲谈
 ---

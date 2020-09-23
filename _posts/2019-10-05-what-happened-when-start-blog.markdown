@@ -4,7 +4,7 @@ title:      "博客搭建：这一路的艰辛"
 subtitle:   "No Cross, No Crown"
 date:       2019-10-05 12:00:00
 author:     "ThreeJin"
-header-img: "img/article-default.jpg"
+header-img: "https://i.loli.net/2020/09/23/cpdwJsZi93e8LNB.png"
 tags:
     - 博客
     - 搭建 
