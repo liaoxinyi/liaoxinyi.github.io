@@ -1,3 +1,9 @@
+# 对 css 和 js 资源的 cdn 加速配置
+cdn:
+jsdelivr:
+enabled: true
+# repository
+repository:liaoxinyi/liaoxinyi.github.io
 # Site settings
 title: ThreeJin    
 SEOTitle: 三斤的博客 | ThreeJin Blog
@@ -6,7 +12,8 @@ article-img: img/article-default.jpg
 email: liaoxinyi1994@gmail.com
 description: "快乐编程，享受人生。"
 keyword: "Java, 软件"
-url: "https://liaoxinyi.github.io"              # your host, for absolute URL
+#url: "https://liaoxinyi.github.io"              # your host, for absolute URL
+url: "https://cdn.jsdelivr.net/gh/liaoxinyi/liaoxinyi.github.io"
 baseurl: ""                             # for example, '/blog' if your blog hosted on 'host/blog'
 
 # Publish posts or collection documents with a future date.

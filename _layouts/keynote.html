@@ -2,7 +2,14 @@
 layout: default
 ---
 
+<<<<<<< HEAD
 
+=======
+<!-- Image to hack wechat -->
+<!-- <img src="/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="{{ site.baseurl }}/{% if page.header-img %}{{ page.header-img }}{% else %}{{ site.header-img }}{% endif %}" width="0" height="0"> -->
+{% assign assets_base_url = site.url %} {% if site.cdn.jsdelivr.enabled %} {% assign assets_base_url = "https://cdn.jsdelivr.net/gh/" | append: site.repository %} {% endif %}
+>>>>>>> 4613d979fe9b171bcd67fd51da61458c2d0458bb
 <!-- Post Header -->
 {% include intro-header.html type='keynote' %}
 
