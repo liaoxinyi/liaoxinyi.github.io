@@ -1,8 +1,8 @@
 # Site settings
 title: ThreeJin    
 SEOTitle: 三斤的博客 | ThreeJin Blog
-header-img: img/home-bg.jpg
-article-img: img/article-default.jpg
+header-img: https://i.loli.net/2020/09/23/qUky6ijwcASNdFG.png
+article-img: https://i.loli.net/2020/09/23/cpdwJsZi93e8LNB.png
 email: liaoxinyi1994@gmail.com
 description: "快乐编程，享受人生。"
 keyword: "Java, 软件"
@@ -80,7 +80,9 @@ ba_track_id: 096fc1720f04b8333658c9a461b926bf
 # Sidebar settings
 sidebar: true                           # whether or not using Sidebar.
 sidebar-about-description: "The Happy Life of Programming<br>享受编程 快乐生活"
-sidebar-avatar: https://pic4.zhimg.com/80/v2-c2f142d9d2f20e65ed06c172c02d65cb_720w.jpeg    # use absolute URL, seeing it's used in both `/` and `/about/`
+# 大头像 use absolute URL, seeing it's used in both `/` and `/about/` 
+sidebar-avatar: https://pic4.zhimg.com/80/v2-c2f142d9d2f20e65ed06c172c02d65cb_720w.jpeg    
+# 底部微信头像
 sidebar-wechat: https://pic2.zhimg.com/80/v2-cefa90bfea019cda5551c510d4a10148_720w.png
 
 
