@@ -23,7 +23,7 @@
                     </div>
                     <h2 class="pageTitle">{{ page.title }}</h2>
                     {% comment %} always create a h2 for keeping the margin {% endcomment %}
-                    <h3 class="pageSubtitle">{{ page.subtitle }}</h3>
+                    <span class="pageSubtitle">{{ page.subtitle }}</span>
                     <span class="meta">Posted by {% if page.author %}{{ page.author }}{% else %}{{ site.title }}{% endif %} on {{ page.date | date: "%B %-d, %Y" }}</span>
                 </div>
             </div>
