@@ -7,8 +7,6 @@ author:     "ThreeJin"
 header-img: "https://i.loli.net/2020/09/23/cpdwJsZi93e8LNB.png"
 tags:
     - 博客
-    - 搭建 
-    - Jekyll
 ---
 > 整个博客是基于[HuangXuan前辈](https://github.com/Huxpro/huxpro.github.io)的框架搭建的，这里感谢所有前辈们的踩坑和解答。
 
