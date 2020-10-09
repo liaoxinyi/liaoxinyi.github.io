@@ -11,31 +11,31 @@ tags:
 > 古有云，欲善其工必先利其器。
 
 ### 文件编码格式
-1. File Encoding设置为UTF-8
-2. C盘的idea64.exe.vmoptions，在文件末尾添加-Dfile.encoding=UTF-8
+- File Encoding设置为UTF-8
+- C盘的idea64.exe.vmoptions，在文件末尾添加-Dfile.encoding=UTF-8
 ### 自动提示时忽略大小写
-Editor--general--CodeCompletion--Case sensitive修改为none
+- Editor--general--CodeCompletion--Case sensitive修改为none
 ### SVN&Git
-1. SVN忽略iml文件以及idea文件
+- SVN忽略iml文件以及idea文件
 Editor--File Types--Ignore files and folders中：增加*.iml
 注：每个忽略项之间是通过；连接的，最后一项也要以；结尾
-2. 自定义SVN添加版本控制(Add to VCS)、更新(update)、提交(Commit File)、历史记录(Show History)、版本对比(Compare with the same Repository Version和Compare with...)、回退（Revert）、Pull和Push等快捷图标到工具栏
+- 自定义SVN添加版本控制(Add to VCS)、更新(update)、提交(Commit File)、历史记录(Show History)、版本对比(Compare with the same Repository Version和Compare with...)、回退（Revert）、Pull和Push等快捷图标到工具栏
 ### 自定义工具栏
 鼠标放在工具栏上，右键，选择Customize Menus and Toolbars--Main Toolbar
 - Main ToolbarSettings--VCS Actions
 - 添加Show in Explorer的快捷图标
 ### 字体调整
-1. 代码：字体：Courier New     size：18     line spacing：1.1
-2. 控制台：
+- 代码：字体：Courier New     size：18     line spacing：1.1
+- 控制台：
 ### 窗口相关
-1. 关闭tab页：editor-general-editor tabs-Placement设置为none
-2. 关闭导航栏：view--Navigation bar
+- 关闭tab页：editor-general-editor tabs-Placement设置为none
+- 关闭导航栏：view--Navigation bar
 ### 代码快捷模板
 #### Editor-Live Template（建议新建自己的group）
-1. 自动生成方法说明：
-	1. Abbreviation:  mcom（可以自取缩写）
-	2. Descriptions:  generate method level comment
-	3. Template text中的文本如下：
+- 自动生成方法说明：
+（1）Abbreviation:  mcom（可以自取缩写）
+（2）Descriptions:  generate method level comment
+（3）Template text中的文本如下：
 ```java
 /**
  * <>说明</>
@@ -45,15 +45,15 @@ $params$
  * @date  <>$date$</>
  */
 ```
-	4. 然后点击 Edit variable
-		1. date:date()
-		2. time:time()
-		3. params:groovyScript("def result=''; def params=\"${_1}\".replaceAll('[\\\\[|\\\\]|\\\\s]', '').split(',').toList(); for(i = 0; i < params.size(); i++) {if(params[i] == '') return result;result+=' * @param  <>' + params[i] + '</>  <>说明</>' + ((i < params.size() - 1) ? '\\n' : '')}; return result", methodParameters())
-		4. retrurns:methodReturnType()
-		5. 点击Define设置信息
-		6. 点击Apply，OK
+（4）然后点击 Edit variable，其中：date变量对应date()，time变量对应time()，params变量对应的脚本内容如下：
+```txt
+groovyScript("def result=''; def params=\"${_1}\".replaceAll('[\\\\[|\\\\]|\\\\s]', '').split(',').toList(); for(i = 0; i < params.size(); i++) {if(params[i] == '') return result;result+=' * @param  <>' + params[i] + '</>  <>说明</>' + ((i < params.size() - 1) ? '\\n' : '')}; return result", methodParameters())
+```
+最后，retrurns变量对应methodReturnType()
+（5）点击Define设置信息
+（6）点击Apply，OK
 
-2. 自动生成类说明：
+- 自动生成类说明：
 ```java
 /**
  * <>功能</>
@@ -64,7 +64,7 @@ $params$
  */
 ```
 其中的变量：DATE     date()
-3. 自动生成成员变量注入
+- 自动生成成员变量注入
 ```java
 /**
  * $TYPE$
@@ -73,7 +73,7 @@ $params$
 private $TYPE$ $NAME$;
 ```
 其中的变量：TYPE  capitalize(clipboard())     NAME   decapitalize(clipboard())
-4. 自动生成log的final成员变量
+- 自动生成log的final成员变量
 ```java
 /**
  * <>logger</>
@@ -82,7 +82,7 @@ private static final Log LOG = LoggerFactory.getLogger($CLASS$.class);
 ```
 其中的变量：CLASS     className()
 #### Editor-File and Code Template
-1. Class
+- Class
 ```java
         #if (${PACKAGE_NAME} && ${PACKAGE_NAME} != "")package ${PACKAGE_NAME};#end
         #parse("File Header.java")
@@ -95,7 +95,7 @@ private static final Log LOG = LoggerFactory.getLogger($CLASS$.class);
         public class ${NAME} {
         }
 ```
-2. Interface
+- Interface
 ```java
         #if (${PACKAGE_NAME} && ${PACKAGE_NAME} != "")package ${PACKAGE_NAME};#end
         #parse("File Header.java")
@@ -109,7 +109,9 @@ private static final Log LOG = LoggerFactory.getLogger($CLASS$.class);
         }
 ```
 ### 插件-Codemaker
-#### JPA
+#### JPA 
+
+内容如下： 
 ```java
         ---------------------------------------------
         ---------------Codemaker配置--------------------------
@@ -184,7 +186,10 @@ private static final Log LOG = LoggerFactory.getLogger($CLASS$.class);
 
         }
 ```
-#### Mapper
+
+#### Mapper 
+内容如下：
+
 ```java
         -------body
         Template Name：Mapper
@@ -251,6 +256,7 @@ private static final Log LOG = LoggerFactory.getLogger($CLASS$.class);
         }
 ```
 ### 插件-Junit-Junit4
+内容如下： 
 ```java
         --------------------------------
         ----------------------------------
@@ -390,6 +396,7 @@ private static final Log LOG = LoggerFactory.getLogger($CLASS$.class);
 CodeGlance、CodeMaker、JUnitGenerator V2.0、Lombok、Maven Helper、POJO to JSON、RestfulToolkit、Statistics、String Manipulation、VisualVM Launcher
 ### 几个Groovy脚本
 #### DTO.groovy
+内容如下：
 ```groovy
 import com.intellij.database.model.DasTable
 import com.intellij.database.model.ObjectKind
@@ -448,7 +455,7 @@ def generate(out, className, fields,table) {
     out.println "import org.hibernate.validator.constraints.Length;"
     out.println "import java.io.Serializable;"
 	out.println "import lombok.Data;"
-				
+
     Set types = new HashSet()
 
     fields.each() {
@@ -523,7 +530,7 @@ def generate(out, className, fields,table) {
      out.println "}"
     out.println ""
     out.println "}"
-}
+} 
 
 def calcFields(table) {
     DasUtil.getColumns(table).reduce([]) { fields, col ->
@@ -595,7 +602,10 @@ static String genSerialID()
     return "\tprivate static final long serialVersionUID =  "+Math.abs(new Random().nextLong())+"L;"
 }
 ```
+
 #### Entity_JPA.groovy
+内容如下： 
+
 ```groovy
 import com.intellij.database.model.DasTable
 import com.intellij.database.model.ObjectKind
@@ -684,8 +694,6 @@ def generate(out, className, fields,table) {
     out.println genSerialID()
 
 
-
-
     fields.each() {
         out.println ""
         // 输出注释
@@ -709,19 +717,7 @@ def generate(out, className, fields,table) {
      out.println "\tpublic String toString(){"
      out.println "\treturn JSON.toJSONString(this);"
      out.println "}"
-    
-    // 输出get/set方法
-//    fields.each() {
-//        out.println ""
-//        out.println "\tpublic ${it.type} get${it.name.capitalize()}() {"
-//        out.println "\t\treturn this.${it.name};"
-//        out.println "\t}"
-//        out.println ""
-//
-//        out.println "\tpublic void set${it.name.capitalize()}(${it.type} ${it.name}) {"
-//        out.println "\t\tthis.${it.name} = ${it.name};"
-//        out.println "\t}"
-//    }
+
     out.println ""
     out.println "}"
 }
@@ -796,7 +792,9 @@ static String genSerialID()
     return "\tprivate static final long serialVersionUID =  "+Math.abs(new Random().nextLong())+"L;"
 }
 ```
+
 #### VO.groovy
+内容如下： 
 ```groovy
 import com.intellij.database.model.DasTable
 import com.intellij.database.model.ObjectKind
@@ -990,7 +988,10 @@ static String genSerialID()
     return "\tprivate static final long serialVersionUID =  "+Math.abs(new Random().nextLong())+"L;"
 }
 ```
+
 #### Entity_JPA.groovy
+内容如下： 
+
 ```groovy
 import com.intellij.database.model.DasTable
 import com.intellij.database.model.ObjectKind
@@ -1082,9 +1083,6 @@ def generate(out, className, fields,table) {
     out.println "\t */"
     out.println genSerialID()
 
-
-
-
     fields.each() {
         out.println ""
         // 输出注释
@@ -1100,18 +1098,6 @@ def generate(out, className, fields,table) {
         out.println "\tprivate ${it.type} ${it.name};"
     }
 
-    // 输出get/set方法
-//    fields.each() {
-//        out.println ""
-//        out.println "\tpublic ${it.type} get${it.name.capitalize()}() {"
-//        out.println "\t\treturn this.${it.name};"
-//        out.println "\t}"
-//        out.println ""
-//
-//        out.println "\tpublic void set${it.name.capitalize()}(${it.type} ${it.name}) {"
-//        out.println "\t\tthis.${it.name} = ${it.name};"
-//        out.println "\t}"
-//    }
     out.println ""
     out.println "}"
 }
@@ -1186,8 +1172,11 @@ static String genSerialID()
     return "\tprivate static final long serialVersionUID =  "+Math.abs(new Random().nextLong())+"L;"
 }
 ```
+
 ### 代码风格
 #### StyleByLXY.xml
+
+内容如下： 
 ```xml
 <code_scheme name="StyleByLXY" version="173">
   <option name="WRAP_WHEN_TYPING_REACHES_RIGHT_MARGIN" value="true" />
@@ -1211,6 +1200,7 @@ static String genSerialID()
   </codeStyleSettings>
 </code_scheme>
 ```
+
 #### GoogleStyle.xml
 在Idea仓库下载
 ### 总结
