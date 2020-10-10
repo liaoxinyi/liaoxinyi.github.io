@@ -37,6 +37,7 @@ date.before(date1);
 // 返回-1 1 0
 date.compareTo(date1);
 ```
+
 #### java.util.Calendar
 - 从JDK1.1开始，在处理日期和时间时，系统推荐使用Calendar类进行实现
 - Calendar它是一种抽象类，相比Date它在操作日历的时候提供了一些方法来操作日历字段
@@ -57,6 +58,7 @@ System.out.println(calendar.getTime().toString());
 calendar.add(Calendar.YEAR, 10);
 System.out.println(calendar.getTime().toString());
 ```
+
 #### 相互转换
 - Calendar 转化 String
 ```java
@@ -78,10 +80,11 @@ SimpleDateFormat sdf= new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 TimeStamp ts =...;
 String result=sdf.format(ts);
 ```
+
 #### 老版本总结
 - 线程安全: <font color=red>Date和Calendar不是线程安全的</font>，需要编写额外的代码处理线程安全问题
 - API设计和易用性: 涉及到一些日期或者时间字符的处理问题时，不够灵活
-- 时间的格式化的时候一般采用SimpleDateFormat
+- 时间的格式化的时候一般采用SimpleDateFormat  
 ### Java8的新特性：java.time
 ### <font color=red>新增加的日期类都是线程安全的</font>
 Instant：时间戳
@@ -129,6 +132,7 @@ Stream.iterate(past, d -> d.plusDays(1)).limit(distance + 1).forEach(f -> list.a
 //比较日期前后
 isBefore和isAfter
 ```
+
 #### LocalTime
 ```java
 // 指定特定的时刻，调用of方法返回该实例
@@ -137,6 +141,7 @@ LocalTime localTime = LocalTime.parse("22:10:59");
 //往后1小时
 LocalTime nextHour = LocalTime.parse("15:02").plus(1, ChronoUnit.HOURS);
 ```
+
 #### LocalDateTime
 ```java
 // LocalDateTime包括LocalDate和LocalTime，可以根据后面两个进行初始化
@@ -148,11 +153,13 @@ LocalTime localTime1 = localDateTime.toLocalTime();
 LocalTime.MAX //对应23:59:59.999999999
 LocalTime.MIN //对应00:00
 ```
+
 #### Instant
 ```java
 // 一个时间戳
 Instant instant = Instant.now();
 ```
+
 #### Duration
 ```java
 // 一个时间段
@@ -162,6 +169,7 @@ long toHours = duration.toHours(); // 这个时间段中有几个小时
 // 通过of创建时间段
 Duration duration1 = Duration.of(5, ChronoUnit.DAYS);
 ```
+
 #### Period
 ```java
 // 以年月日来表示时间段:
@@ -170,6 +178,7 @@ period.getYears();
 period.getMonths();
 period.getDays();
 ```
+
 #### 格式化
 ```java
 LocalDateTime now = LocalDateTime.now();
@@ -182,6 +191,7 @@ LocalDateTime localDateTime = LocalDateTime.parse("2017-07-20 15:27:44", dateTim
 DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 String dateString = dateTimeFormatter.format(LocalDate.now());
 ```
+
 #### 新旧版本之间的转换
 ```java
 //Date和Instant互相转换
@@ -196,6 +206,7 @@ Date date =
 Date date =
  Date.from(LocalDate.now().atStartOfDay().atZone(ZoneId.systemDefault()).toInstant());
 ```
+
 ### 总结
 - Java8之后的时间类已经具备了很多比较人性化的API了，所以在新项目中可以采用新的时间类，老项目中还是用以前的类，而且老项目中一般会有已有的时间处理工具类。
 

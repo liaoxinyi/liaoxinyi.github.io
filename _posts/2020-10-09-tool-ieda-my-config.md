@@ -46,8 +46,8 @@ Editor--File Types--Ignore files and folders中：增加
 - 自动生成方法说明：
 Abbreviation:  mcom（可以自取缩写）
 Descriptions:  generate method level comment
-Template text中的文本如下： 
-```
+Template text中的文本如下：  
+```java
 /**
  * <>说明</>
 $params$
@@ -56,13 +56,13 @@ $params$
  * @date  <>$date$</>
  */
 ```
-然后点击 Edit variable，其中：date变量对应date()，time变量对应time()，params变量对应的脚本内容如下： 
-```
+然后点击 Edit variable，其中：date变量对应date()，time变量对应time()，params变量对应的脚本内容如下：  
+```txt
 groovyScript("def result=''; def params=\"${_1}\".replaceAll('[\\\\[|\\\\]|\\\\s]', '').split(',').toList(); for(i = 0; i < params.size(); i++) {if(params[i] == '') return result;result+=' * @param  <>' + params[i] + '</>  <>说明</>' + ((i < params.size() - 1) ? '\\n' : '')}; return result", methodParameters())
 ```
-retrurns变量对应methodReturnType()，最后点击Define设置信息，点击Apply，OK 
-- 自动生成类说明： 
-```
+retrurns变量对应methodReturnType()，最后点击Define设置信息，点击Apply，OK   
+- 自动生成类说明：  
+```java
 /**
  * <>功能</>
  *
@@ -71,28 +71,27 @@ retrurns变量对应methodReturnType()，最后点击Define设置信息，点击
  * @since  <>V1.0.0</>
  */
 ```
-其中的变量：DATE     date()
-- 自动生成成员变量注入 
-```
+其中的变量：DATE     date()  
+- 自动生成成员变量注入  
+```java
 /**
  * $TYPE$
  */
 @Autowired
 private $TYPE$ $NAME$;
 ```
-其中的变量：TYPE  capitalize(clipboard())     NAME   decapitalize(clipboard())
-- 自动生成log的final成员变量 
-```
+其中的变量：TYPE  capitalize(clipboard())     NAME   decapitalize(clipboard())  
+- 自动生成log的final成员变量   
+```java
 /**
  * <>logger</>
  */
 private static final Log LOG = LoggerFactory.getLogger($CLASS$.class);
 ```
-其中的变量：CLASS     className() 
-
+其中的变量：CLASS     className()   
 ##### Editor-File and Code Template
-- Class
-```
+- Class  
+```java
         #if (${PACKAGE_NAME} && ${PACKAGE_NAME} != "")package ${PACKAGE_NAME};#end
         #parse("File Header.java")
         /** 
@@ -104,8 +103,8 @@ private static final Log LOG = LoggerFactory.getLogger($CLASS$.class);
         public class ${NAME} {
         }
 ```
-- Interface
-```
+- Interface  
+```java
         #if (${PACKAGE_NAME} && ${PACKAGE_NAME} != "")package ${PACKAGE_NAME};#end
         #parse("File Header.java")
         /** 
@@ -119,8 +118,7 @@ private static final Log LOG = LoggerFactory.getLogger($CLASS$.class);
 ```
 
 ### 插件-Codemaker
-##### JPA 
-内容如下： 
+##### JPA  
 ```java
         ---------------------------------------------
         ---------------Codemaker配置--------------------------
@@ -196,8 +194,7 @@ private static final Log LOG = LoggerFactory.getLogger($CLASS$.class);
         }
 ```
 
-##### Mapper 
-内容如下： 
+##### Mapper  
 ```java
         -------body
         Template Name：Mapper
@@ -264,21 +261,16 @@ private static final Log LOG = LoggerFactory.getLogger($CLASS$.class);
         }
 ```
 
-### 插件-Junit-Junit4
+### 插件-Junit-Junit4  
 内容参考IDEA仓库中的内容 
-
 ### 常用插件中groovy配置文件位置
 目录：C:\Users\用户名\.IntelliJIdea2018.2\config\extensions\com.intellij.database\schema
-
 ### 常用插件
 CodeGlance、CodeMaker、JUnitGenerator V2.0、Lombok、Maven Helper、POJO to JSON、RestfulToolkit、Statistics、String Manipulation、VisualVM Launcher 
-
 ### 几个Groovy脚本
 - DTO.groovy、Entity_JPA.groovy、VO.groovy、Entity_JPA.groovy，可在Idea仓库下载 
-
 ### 代码风格
-##### StyleByLXY.xml
-内容如下： 
+##### StyleByLXY.xml  
 ```
 <code_scheme name="StyleByLXY" version="173">
   <option name="WRAP_WHEN_TYPING_REACHES_RIGHT_MARGIN" value="true" />
