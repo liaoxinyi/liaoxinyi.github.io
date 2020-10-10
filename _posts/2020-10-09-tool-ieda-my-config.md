@@ -13,9 +13,9 @@ tags:
 ### 输入相关
 #### 文件编码格式
 - File Encoding设置为UTF-8
-- C盘的idea64.exe.vmoptions，在文件末尾添加-Dfile.encoding=UTF-8  
+- C盘的idea64.exe.vmoptions，在文件末尾添加-Dfile.encoding=UTF-8 
 #### 自动提示时忽略大小写
-- Editor--general--CodeCompletion--Case sensitive修改为none  
+- Editor--general--CodeCompletion--Case sensitive修改为none 
 ### 快捷操作
 #### SVN&Git
 - SVN忽略iml文件以及idea文件
@@ -23,24 +23,24 @@ Editor--File Types--Ignore files and folders中：增加
 `*.iml;`
 注：每个忽略项之间是通过；连接的，最后一项也要以；结尾
 - 自定义SVN操作到工具栏
-添加版本控制(Add to VCS)、更新(update)、提交(Commit File)、历史记录(Show History)、版本对比(Compare with the same Repository Version和Compare with...)、回退（Revert）、Pull和Push等快捷图标到工具栏  
+添加版本控制(Add to VCS)、更新(update)、提交(Commit File)、历史记录(Show History)、版本对比(Compare with the same Repository Version和Compare with...)、回退（Revert）、Pull和Push等快捷图标到工具栏 
 #### 自定义工具栏
 鼠标放在工具栏上，右键，选择Customize Menus and Toolbars--Main Toolbar
 - Main ToolbarSettings--VCS Actions
-- 添加Show in Explorer的快捷图标  
+- 添加Show in Explorer的快捷图标 
 ### 视觉相关
 #### 字体调整
 - 代码：字体：Courier New     size：18     line spacing：1.1
 - 控制台：
 #### 窗口相关
 - 关闭tab页：editor-general-editor tabs-Placement设置为none
-- 关闭导航栏：view--Navigation bar  
+- 关闭导航栏：view--Navigation bar 
 ### 代码快捷模板 
 ##### Editor-Live Template（建议新建自己的group）
 - 自动生成方法说明：
 Abbreviation:  mcom（可以自取缩写）
 Descriptions:  generate method level comment
-Template text中的文本如下：  
+Template text中的文本如下： 
 ```
 /**
  * <>说明</>
@@ -50,12 +50,12 @@ $params$
  * @date  <>$date$</>
  */
 ```
-然后点击 Edit variable，其中：date变量对应date()，time变量对应time()，params变量对应的脚本内容如下：  
+然后点击 Edit variable，其中：date变量对应date()，time变量对应time()，params变量对应的脚本内容如下： 
 ```
 groovyScript("def result=''; def params=\"${_1}\".replaceAll('[\\\\[|\\\\]|\\\\s]', '').split(',').toList(); for(i = 0; i < params.size(); i++) {if(params[i] == '') return result;result+=' * @param  <>' + params[i] + '</>  <>说明</>' + ((i < params.size() - 1) ? '\\n' : '')}; return result", methodParameters())
 ```
-retrurns变量对应methodReturnType()，最后点击Define设置信息，点击Apply，OK  
-- 自动生成类说明：  
+retrurns变量对应methodReturnType()，最后点击Define设置信息，点击Apply，OK 
+- 自动生成类说明： 
 ```
 /**
  * <>功能</>
@@ -66,7 +66,7 @@ retrurns变量对应methodReturnType()，最后点击Define设置信息，点击
  */
 ```
 其中的变量：DATE     date()
-- 自动生成成员变量注入  
+- 自动生成成员变量注入 
 ```
 /**
  * $TYPE$
@@ -75,14 +75,14 @@ retrurns变量对应methodReturnType()，最后点击Define设置信息，点击
 private $TYPE$ $NAME$;
 ```
 其中的变量：TYPE  capitalize(clipboard())     NAME   decapitalize(clipboard())
-- 自动生成log的final成员变量  
+- 自动生成log的final成员变量 
 ```
 /**
  * <>logger</>
  */
 private static final Log LOG = LoggerFactory.getLogger($CLASS$.class);
 ```
-其中的变量：CLASS     className()  
+其中的变量：CLASS     className() 
 ##### Editor-File and Code Template
 - Class
 ```
@@ -112,7 +112,7 @@ private static final Log LOG = LoggerFactory.getLogger($CLASS$.class);
 ```
 ### 插件-Codemaker
 ##### JPA 
-内容如下：  
+内容如下： 
 ```java
         ---------------------------------------------
         ---------------Codemaker配置--------------------------
@@ -187,9 +187,8 @@ private static final Log LOG = LoggerFactory.getLogger($CLASS$.class);
 
         }
 ```
-
 ##### Mapper 
-内容如下：  
+内容如下： 
 ```java
         -------body
         Template Name：Mapper
@@ -260,13 +259,13 @@ private static final Log LOG = LoggerFactory.getLogger($CLASS$.class);
 ### 常用插件中groovy配置文件位置
 目录：C:\Users\用户名\.IntelliJIdea2018.2\config\extensions\com.intellij.database\schema
 ### 常用插件
-CodeGlance、CodeMaker、JUnitGenerator V2.0、Lombok、Maven Helper、POJO to JSON、RestfulToolkit、Statistics、String Manipulation、VisualVM Launcher  
+CodeGlance、CodeMaker、JUnitGenerator V2.0、Lombok、Maven Helper、POJO to JSON、RestfulToolkit、Statistics、String Manipulation、VisualVM Launcher 
 ### 几个Groovy脚本
-- DTO.groovy、Entity_JPA.groovy、VO.groovy、Entity_JPA.groovy，可在Idea仓库下载  
+- DTO.groovy、Entity_JPA.groovy、VO.groovy、Entity_JPA.groovy，可在Idea仓库下载 
 ### 代码风格
 ##### StyleByLXY.xml
-内容如下：   
-```xml
+内容如下： 
+```
 <code_scheme name="StyleByLXY" version="173">
   <option name="WRAP_WHEN_TYPING_REACHES_RIGHT_MARGIN" value="true" />
   <JavaCodeStyleSettings>
@@ -290,7 +289,7 @@ CodeGlance、CodeMaker、JUnitGenerator V2.0、Lombok、Maven Helper、POJO to J
 </code_scheme>
 ```
 #### GoogleStyle.xml
-在Idea仓库下载  
+在Idea仓库下载 
 ### 总结
 - 工具只是工具，最重要的还是能力和习惯。
 - 最为便捷的方式是，将设置好的IDEA配置，直接导出，方便以后直接配置。
