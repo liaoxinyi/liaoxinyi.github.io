@@ -46,7 +46,8 @@ Editor--File Types--Ignore files and folders中：增加
 - 自动生成方法说明：
 Abbreviation:  mcom（可以自取缩写）
 Descriptions:  generate method level comment
-Template text中的文本如下：  
+Template text中的文本如下： 
+
 ```java
 /**
  * <>说明</>
@@ -56,6 +57,7 @@ $params$
  * @date  <>$date$</>
  */
 ```
+
 然后点击 Edit variable，其中：date变量对应date()，time变量对应time()，params变量对应的脚本内容如下：  
 ```txt
 groovyScript("def result=''; def params=\"${_1}\".replaceAll('[\\\\[|\\\\]|\\\\s]', '').split(',').toList(); for(i = 0; i < params.size(); i++) {if(params[i] == '') return result;result+=' * @param  <>' + params[i] + '</>  <>说明</>' + ((i < params.size() - 1) ? '\\n' : '')}; return result", methodParameters())
