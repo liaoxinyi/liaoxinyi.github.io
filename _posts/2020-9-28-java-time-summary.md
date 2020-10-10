@@ -11,7 +11,7 @@ tags:
 > Calendar、Date、Time、TimeStamp、LocalTime、LocalDate、LocalDateTime、Instant、Duration、Period...。
 
 ### Java8之前
-#### java.util.Date
+##### java.util.Date
 - Date类表示的是特定的，瞬间的，它能精确毫秒
 - 由它衍生的子类：java.sql.Date、java.sql.Time和java.sql.Timestamp
 ```java
@@ -38,7 +38,7 @@ date.before(date1);
 date.compareTo(date1);
 ```
 
-#### java.util.Calendar
+##### java.util.Calendar
 - 从JDK1.1开始，在处理日期和时间时，系统推荐使用Calendar类进行实现
 - Calendar它是一种抽象类，相比Date它在操作日历的时候提供了一些方法来操作日历字段
 - 一般认为Calendar是Date的加强版，实际使用的频率要比Date更多
@@ -59,7 +59,7 @@ calendar.add(Calendar.YEAR, 10);
 System.out.println(calendar.getTime().toString());
 ```
 
-#### 相互转换
+##### 相互转换
 - Calendar 转化 String
 ```java
 Calendar calendat = Calendar.getInstance();
@@ -81,22 +81,23 @@ TimeStamp ts =...;
 String result=sdf.format(ts);
 ```
 
-#### 老版本总结
+##### 老版本总结
 - 线程安全: <font color=red>Date和Calendar不是线程安全的</font>，需要编写额外的代码处理线程安全问题
 - API设计和易用性: 涉及到一些日期或者时间字符的处理问题时，不够灵活
-- 时间的格式化的时候一般采用SimpleDateFormat  
+- 时间的格式化的时候一般采用SimpleDateFormat
+
 ### Java8的新特性：java.time
-### <font color=red>新增加的日期类都是线程安全的</font>
-Instant：时间戳
-Duration：持续时间，时间差
-LocalDate：只包含日期，比如：2019-02-02
-LocalTime：只包含时间，比如：23:12:10
-LocalDateTime：包含日期和时间，比如：2019-02-02 23:14:21
-Period：时间段
-ZoneOffset：时区偏移量，比如：+8:00
-ZonedDateTime：带时区的时间
-Clock：时钟，比如获取目前美国纽约的时间
-#### LocalDate
+**<font color=red>新增加的日期类都是线程安全的</font>**  
+**Instant**：时间戳  
+**Duration**：持续时间，时间差  
+**LocalDate**：只包含日期，比如：2019-02-02  
+**LocalTime**：只包含时间，比如：23:12:10  
+**LocalDateTime**：包含日期和时间，比如：2019-02-02 23:14:21  
+**Period**：时间段  
+**ZoneOffset**：时区偏移量，比如：+8:00  
+**ZonedDateTime**：带时区的时间  
+**Clock**：时钟，比如获取目前美国纽约的时间  
+##### LocalDate
 ```java
 // 指定特定的日期，调用of或parse方法返回该实例
 LocalDate.of(2017, 07, 20);
@@ -133,7 +134,7 @@ Stream.iterate(past, d -> d.plusDays(1)).limit(distance + 1).forEach(f -> list.a
 isBefore和isAfter
 ```
 
-#### LocalTime
+##### LocalTime
 ```java
 // 指定特定的时刻，调用of方法返回该实例
 LocalTime localTime = LocalTime.of(22, 10, 59);
@@ -142,7 +143,7 @@ LocalTime localTime = LocalTime.parse("22:10:59");
 LocalTime nextHour = LocalTime.parse("15:02").plus(1, ChronoUnit.HOURS);
 ```
 
-#### LocalDateTime
+##### LocalDateTime
 ```java
 // LocalDateTime包括LocalDate和LocalTime，可以根据后面两个进行初始化
 LocalDateTime localDateTime = LocalDateTime.of(localDate, localTime);
@@ -154,13 +155,13 @@ LocalTime.MAX //对应23:59:59.999999999
 LocalTime.MIN //对应00:00
 ```
 
-#### Instant
+##### Instant
 ```java
 // 一个时间戳
 Instant instant = Instant.now();
 ```
 
-#### Duration
+##### Duration
 ```java
 // 一个时间段
 Duration duration = Duration.between(past, now);
@@ -170,7 +171,7 @@ long toHours = duration.toHours(); // 这个时间段中有几个小时
 Duration duration1 = Duration.of(5, ChronoUnit.DAYS);
 ```
 
-#### Period
+##### Period
 ```java
 // 以年月日来表示时间段:
 Period period = Period.between(past, now);
@@ -179,7 +180,7 @@ period.getMonths();
 period.getDays();
 ```
 
-#### 格式化
+##### 格式化
 ```java
 LocalDateTime now = LocalDateTime.now();
 DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -192,7 +193,7 @@ DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 String dateString = dateTimeFormatter.format(LocalDate.now());
 ```
 
-#### 新旧版本之间的转换
+##### 新旧版本之间的转换
 ```java
 //Date和Instant互相转换
 Date date = Date.from(Instant.now());
@@ -208,7 +209,7 @@ Date date =
 ```
 
 ### 总结
-- Java8之后的时间类已经具备了很多比较人性化的API了，所以在新项目中可以采用新的时间类，老项目中还是用以前的类，而且老项目中一般会有已有的时间处理工具类。
+&emsp;&emsp;Java8之后的时间类已经具备了很多比较人性化的API了，所以在新项目中可以采用新的时间类，老项目中还是用以前的类，而且老项目中一般会有已有的时间处理工具类。
 
 
 
