@@ -4,7 +4,7 @@ title:      "三行"
 subtitle:   "Three lines"
 date:       2020-01-21 23:59:00
 author:     "ThreeJin"
-header-img: "https://i.loli.net/2020/09/27/3GhEUYx52PBemso.jpg"
+header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/threelines.png"
 tags:
     - 三行
 ---
