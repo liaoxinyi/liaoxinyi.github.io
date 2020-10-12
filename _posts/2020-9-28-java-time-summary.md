@@ -12,6 +12,9 @@ tags:
 
 ### Java8之前
 ##### java.util.Date
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/20201012084926.png)
+<center>Date、Time、Timstamp的UML类图</center>
+
 - Date类表示的是特定的，瞬间的，它能精确毫秒
 - 由它衍生的子类：java.sql.Date、java.sql.Time和java.sql.Timestamp
 ```java
@@ -39,6 +42,9 @@ date.compareTo(date1);
 ```
 
 ##### java.util.Calendar
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/java-time-calendar.png)
+<center>Calendar的UML类图</center>
+
 - 从JDK1.1开始，在处理日期和时间时，系统推荐使用Calendar类进行实现
 - Calendar它是一种抽象类，相比Date它在操作日历的时候提供了一些方法来操作日历字段
 - 一般认为Calendar是Date的加强版，实际使用的频率要比Date更多
@@ -97,6 +103,7 @@ String result=sdf.format(ts);
 **ZoneOffset**：时区偏移量，比如：+8:00  
 **ZonedDateTime**：带时区的时间  
 **Clock**：时钟，比如获取目前美国纽约的时间  
+
 ##### LocalDate
 ```java
 // 指定特定的日期，调用of或parse方法返回该实例
