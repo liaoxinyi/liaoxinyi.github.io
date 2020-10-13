@@ -1,13 +1,21 @@
 # Site settings
 title: ThreeJin    
 SEOTitle: 三斤的博客 | ThreeJin Blog
-header-img: https://i.loli.net/2020/09/23/qUky6ijwcASNdFG.png
-article-img: https://i.loli.net/2020/09/23/cpdwJsZi93e8LNB.png
+header-img: https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/blogHead.png
+article-img: https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/article-head.png
 email: liaoxinyi1994@gmail.com
 description: "快乐编程，享受人生。"
 keyword: "Java, 软件"
 url: "https://liaoxinyi.github.io"              # your host, for absolute URL
 baseurl: ""                             # for example, '/blog' if your blog hosted on 'host/blog'
+
+# Sidebar settings
+sidebar: true                           # whether or not using Sidebar.
+sidebar-about-description: "The Happy Life of Programming<br>享受编程 快乐生活"
+# 大头像 use absolute URL, seeing it's used in both `/` and `/about/` 
+sidebar-avatar: https://pic4.zhimg.com/80/v2-c2f142d9d2f20e65ed06c172c02d65cb_720w.jpeg    
+# 底部微信头像
+sidebar-wechat: https://pic2.zhimg.com/80/v2-cefa90bfea019cda5551c510d4a10148_720w.png
 
 # Publish posts or collection documents with a future date.
 future: true
@@ -65,8 +73,6 @@ disqus_username: hux
 # Netease settings
 netease_comment: false
 
-
-
 # Analytics settings
 # Baidu Analytics 
 ba_track_id: 096fc1720f04b8333658c9a461b926bf
@@ -75,33 +81,16 @@ ba_track_id: 096fc1720f04b8333658c9a461b926bf
 #ga_track_id: 'UA-49627206-1'            # Format: UA-xxxxxx-xx
 #ga_domain: huangxuan.me
 
-
-
-# Sidebar settings
-sidebar: true                           # whether or not using Sidebar.
-sidebar-about-description: "The Happy Life of Programming<br>享受编程 快乐生活"
-# 大头像 use absolute URL, seeing it's used in both `/` and `/about/` 
-sidebar-avatar: https://pic4.zhimg.com/80/v2-c2f142d9d2f20e65ed06c172c02d65cb_720w.jpeg    
-# 底部微信头像
-sidebar-wechat: https://pic2.zhimg.com/80/v2-cefa90bfea019cda5551c510d4a10148_720w.png
-
-
-
 # Featured Tags
 featured-tags: true                     # whether or not using Feature-Tags
 featured-condition-size: 0              # A tag will be featured if the size of it is more than this condition value
-
-
 
 # Progressive Web Apps
 chrome-tab-theme-color: "#000000"
 service-worker: true
 
-
-
 # MathJax rendering for layout:page (e.g. post preview)
 page-mathjax: false
-
 
 
 # Friends

@@ -4,7 +4,7 @@ title:      "生活之重"
 subtitle:   "What is important in life."
 date:       2020-09-27 09:08:00
 author:     "ThreeJin"
-header-img: "https://i.loli.net/2020/09/23/cpdwJsZi93e8LNB.png"
+header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/article-head.png"
 tags:
     - 闲谈
 ---
