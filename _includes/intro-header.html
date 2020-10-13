@@ -14,11 +14,19 @@
 <header class="intro-header" >
     <div class="container">
         <div class="row">
-            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
-                <div style="color:red" class="post-heading" id="tag-heading">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">            
+            {% if page.color %}
+            <div style="color:{{ page.color }}" class="post-heading" id="tag-heading">
+            {% else %}
+            <div class="post-heading" id="tag-heading">
+            {% endif %}
                     <div class="tags">
                         {% for tag in page.tags %}
-                        <a class="tag" href="{{ site.baseurl }}/archive/?tag={{ tag | url_encode }}" title="{{ tag }}">{{ tag }}</a>
+                            {% if page.color %}
+                            <a style="color:{{ page.color }}" class="tag" href="{{ site.baseurl }}/archive/?tag={{ tag | url_encode }}" title="{{ tag }}">{{ tag }}</a>
+                            {% else %}
+                            <a class="tag" href="{{ site.baseurl }}/archive/?tag={{ tag | url_encode }}" title="{{ tag }}">{{ tag }}</a>
+                            {% endif %}
                         {% endfor %}
                     </div>
                     <h2 class="pageTitle">{{ page.title }}</h2>
