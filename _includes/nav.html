@@ -31,13 +31,13 @@
                         <a href="{{ site.baseurl }}/">Home</a>
                         {% endif %}
                     </li>
-                    {% for page in site.pages %}
-                    {% if page.title and page.hide-in-nav != true %}
+                    {% for sitepage in site.pages %}
+                    {% if sitepage.title and sitepage.hide-in-nav != true %}
                     <li>
                         {% if page.color %}
-                        <a style="color:{{ page.color }}" href="{{ page.url | prepend: site.baseurl }}">{{ page.title }}</a>
+                        <a style="color:{{ page.color }}" href="{{ sitepage.url | prepend: site.baseurl }}">{{ sitepage.title }}</a>
                         {% else %}
-                        <a href="{{ page.url | prepend: site.baseurl }}">{{ page.title }}</a>
+                        <a href="{{ sitepage.url | prepend: site.baseurl }}">{{ sitepage.title }}</a>
                         {% endif %}
                     </li>
                     {% endif %}
