@@ -8,7 +8,14 @@
     header.intro-header{
         background-image: url({% if page.header-img %}{{ page.header-img }}{% else %}{{ site.article-img }}{% endif %});
     }
-    
+    {% if page.header-mask %}
+    header.intro-header.header-mask{
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        background: rgba(0,0,0, {{ page.header-mask }});
+    }
+    {% endif %}
 </style>
 
 <header class="intro-header" >
