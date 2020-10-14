@@ -2,9 +2,10 @@
 layout:     post
 title:      "让我的IDEA好用到飞起"
 subtitle:   "My configuration of IDEA."
+color:      "white"
 date:       2020-10-09 23:59:00
 author:     "ThreeJin"
-header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/article-head.png"
+header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/tool-idea.bmp"
 tags:
     - 工具
 ---
