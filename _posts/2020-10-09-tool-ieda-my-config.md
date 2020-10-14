@@ -5,6 +5,7 @@ subtitle:   "My configuration of IDEA."
 color:      "white"
 date:       2020-10-09 23:59:00
 author:     "ThreeJin"
+catalog: true
 header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/tool-idea.bmp"
 tags:
     - 工具
@@ -305,6 +306,6 @@ CodeGlance、CodeMaker、JUnitGenerator V2.0、Lombok、Maven Helper、POJO to J
 
 ##### GoogleStyle.xml
 在Idea仓库下载 
-#### 总结
+### 总结
 - 工具只是工具，最重要的还是能力和习惯。
 - 最为便捷的方式是，将设置好的IDEA配置，直接导出，方便以后直接配置。
