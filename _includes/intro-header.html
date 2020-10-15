@@ -23,9 +23,9 @@
         <div class="row">
             <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">            
             {% if page.color %}
-            <div style="color:{{ page.color }}" class="post-heading" id="tag-heading">
+            <div style="color:{{ page.color }}" class="post-heading">
             {% else %}
-            <div class="post-heading" id="tag-heading">
+            <div class="post-heading">
             {% endif %}
                     <div class="tags">
                         {% for tag in page.tags %}
