@@ -4,8 +4,9 @@ title:      "时间日期那些事"
 subtitle:   "Some java API about time."
 date:       2020-09-28 23:59:00
 author:     "ThreeJin"
+header-mask: 0.5
 catalog: true
-header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/java-time-calendar.bmp"
+header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/time.jpg"
 tags:
     - Java
 ---

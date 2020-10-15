@@ -4,8 +4,9 @@ title:      "博客搭建：这一路的艰辛"
 subtitle:   "No Cross, No Crown"
 date:       2019-10-05 12:00:00
 catalog: true
+header-mask: 0.5
 author:     "ThreeJin"
-header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/article-head.png"
+header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/blog.png"
 tags:
     - 博客
 ---

@@ -4,7 +4,8 @@ title:      "一边敲代码一边挖石油"
 subtitle:   "Program or Oil , that is a question"
 date:       2019-10-06 16:22:00
 author:     "ThreeJin"
-header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/article-head.png"
+header-mask: 0.5
+header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/0j3l2y.jpg"
 tags:
     - 闲谈
 ---

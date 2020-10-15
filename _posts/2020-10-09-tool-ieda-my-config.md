@@ -5,8 +5,9 @@ subtitle:   "My configuration of IDEA."
 color:      "white"
 date:       2020-10-09 23:59:00
 author:     "ThreeJin"
+header-mask: 0.6
 catalog: true
-header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/tool-idea.bmp"
+header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/idea.jpg"
 tags:
     - 工具
 ---
