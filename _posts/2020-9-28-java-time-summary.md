@@ -3,6 +3,7 @@ layout:     post
 title:      "时间日期那些事"
 subtitle:   "Some java API about time."
 date:       2020-09-28 23:59:00
+update-date:       2020-10-16 23:59:00
 author:     "ThreeJin"
 header-mask: 0.5
 catalog: true
@@ -90,7 +91,10 @@ String result=sdf.format(ts);
 ##### 老版本总结
 - 线程安全: <font color=red>Date和Calendar不是线程安全的</font>，需要编写额外的代码处理线程安全问题
 - API设计和易用性: 涉及到一些日期或者时间字符的处理问题时，不够灵活
-- 时间的格式化的时候一般采用SimpleDateFormat
+- 时间的格式化的时候一般采用SimpleDateFormat，但SimpleDateFormat是线程不安全的  
+原因一：因为SimpleDateFormat#format方法中calendar是共享变量，并且这个共享变量没有做线程安全控制。当多个线程同时使用相同的SimpleDateFormat对象【如用static修饰的SimpleDateFormat】调用format方法时，多个线程会同时调用calendar.setTime方法，可能一个线程刚设置好time值另外的一个线程马上把设置的time值给修改了导致返回的格式化时间可能是错误的  
+原因二：SimpleDateFormat#parse方法也是线程不安全的  
+所以，避免线程之间共享一个SimpleDateFormat对象，每个线程使用时都创建一次SimpleDateFormat对象。加上Date对于时间的处理真的很不方便，而且获取年月日的大多方法都是已经被废弃了，千言万语，还是尝鲜Java8吧
 
 ### Java8的新特性：java.time
 **<font color=red>新增加的日期类都是线程安全的</font>**  
@@ -128,6 +132,9 @@ LocalDate tomorrow = LocalDate.now().minusDays(1);//底层是plusDays方法
 //从今天减去一个月，增加5天
 LocalDate prevMonth = LocalDate.now().minus(1, ChronoUnit.MONTHS);
 LocalDate after5Days=LocalDate.now().plus(5, ChronoUnit.DAYS);
+//增加一年
+localDateTime = localDateTime.plusYears(1);  
+localDateTime = localDateTime.plus(1, ChronoUnit.YEARS);
 //两个日期之间间隔多少天、月
 long distance = ChronoUnit.DAYS.between(past, now);
 long distance = ChronoUnit.MONTHS.between(past, now);
@@ -139,6 +146,12 @@ long distance = ChronoUnit.DAYS.between(past, now);
 Stream.iterate(past, d -> d.plusDays(1)).limit(distance + 1).forEach(f -> list.add(f.toString()));
 //比较日期前后
 isBefore和isAfter
+//修改年为2019  
+localDateTime = localDateTime.withYear(2020);  
+//修改为2022  
+localDateTime = localDateTime.with(ChronoField.YEAR, 2022);
+//这个月的最后一天是几号、下个周末是几号
+LocalDate localDate1 = LocalDate.now().with(firstDayOfYear());
 ```
 
 ##### LocalTime
@@ -166,6 +179,10 @@ LocalTime.MIN //对应00:00
 ```java
 // 一个时间戳
 Instant instant = Instant.now();
+//获取秒数
+long currentSecond = instant.getEpochSecond(); 
+//获取毫秒数（这里不如直接用System.currentTimeMillis()方便）
+long currentMilli = instant.toEpochMilli(); 
 ```
 
 ##### Duration
@@ -188,6 +205,8 @@ period.getDays();
 ```
 
 ##### 格式化
+**<font color=red>DateTimeFormatter是线程安全的</font>**
+
 ```java
 LocalDateTime now = LocalDateTime.now();
 DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -199,6 +218,15 @@ LocalDateTime localDateTime = LocalDateTime.parse("2017-07-20 15:27:44", dateTim
 DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 String dateString = dateTimeFormatter.format(LocalDate.now());
 ```
+
+##### 实操
+- 将LocalDateTime字段以指定格式化日期的方式返回给前端  
+在LocalDateTime字段上添加注解  
+`@JsonFormat(shape=JsonFormat.Shape.STRING, pattern="yyyy-MM-dd HH:mm:ss")`  
+
+- 对前端传入的日期进行格式化
+在LocalDateTime字段上添加注解  
+`@DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")`  
 
 ##### 新旧版本之间的转换
 ```java
