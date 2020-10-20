@@ -4,7 +4,7 @@ title:      "new String(\"字面量\")时发生了什么？"
 subtitle:   "字符串常量池详细解读"
 date:       2020-10-19 23:59:00
 author:     "ThreeJin"
-header-mask: 0.5
+header-mask: 0.3
 catalog: true
 header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/string-pool.bmp"
 tags:
@@ -42,7 +42,9 @@ class NewTest1{
 &emsp;&emsp;首先，编译器在完成代码编译之后，"static" "he" "llo" "hello"都会进入Class的常量池。其中，**因为类加载过程中的解析阶段是lazy的**，所以是不会立马创建实例，更不会立马驻留字符串常量池  
 &emsp;&emsp;那么，既然是lazy的，总有一个时刻或者一个条件来触发它。这就是那16个用于操作符号引用的字节码指令（比如Idc指令），以Idc指令为例：这个指令的作用是将int、float或String型常量值从常量池中推送至栈顶。具体实现过程是让虚拟机到当前类的运行时常量池（runtime constant pool，HotSpot VM里是ConstantPool + ConstantPoolCache）去查找该index对应的项，如果该项尚未resolve则resolve之，并返回resolve后的内容。在遇到String类型常量时，resolve的过程如果发现StringTable已经有了内容匹配的java.lang.String的引用，则直接返回这个引用，反之，如果StringTable里尚未有内容匹配的String实例的引用，则会在Java堆里创建一个对应内容的String对象，然后在StringTable记录下这个引用，并返回这个引用出去。可见，ldc指令是否需要创建新的String实例，全看在第一次执行这一条ldc指令时，StringTable是否已经记录了一个对应内容的String的引用  
 &emsp;&emsp;但是，要注意上面那段代码中的“static”和其他三个不一样，它是静态的。所以在类加载过程中的初始化阶段，会为静态变量指定初始值，也就是要把“static”赋值给s1。具体的操作就是，先ldc指令把它放到栈顶，然后用putstatic指令完成赋值。注意，ldc指令，根据上面说的，会创建"static"字符串对象，并且会保存一个指向它的引用到字符串常量池  
-&emsp;&emsp;运行main方法后，首先是第二句，一样的，要先用ldc把"he"和"llo"送到栈顶，换句话说，会创建他俩的对象，并且会保存引用到字符串常量池中。然后有个＋号，内部是创建了一个StringBuilder对象，一路append，最后调用StringBuilder对象的toString方法得到一个String对象（内容是hello，注意这个toString方法会new一个String对象），并把它赋值给s1。注意啊，此时并没有把hello的引用放入字符串常量池  
+&emsp;&emsp;运行main方法后，首先是第二句，一样的，要先用ldc把"he"和"llo"送到栈顶，换句话说，会创建他俩的对象，并且会保存引用到字符串常量池中。然后有个＋号，内部是创建了一个StringBuilder对象，一路append，最后调用StringBuilder对象的toString方法得到一个String对象（内容是hello，注意这个toString方法会new一个String对象），并把它赋值给s1。注意啊，此时并没有把hello的引用放入字符串常量池。**如果相加的参数只有字面量或者常量或基础类型变量，则会直接编译为拼接后的字符串，就像下面这样**  
+`String str1 =1+"str2"+"str3";`  
+**如果使用字面量拼接的话，字符串常量池里是不会保存拼接的参数的，而是直接编译成拼接后的字符串保存**  
 &emsp;&emsp;然后是第三句，intern方法一看，字符串常量池里面没有，它会把上面的这个hello对象的引用保存到字符串常量池，然后返回这个引用，但是这个返回值我们并没有使用变量去接收，所以没用  
 &emsp;&emsp;第四句，字符串常量池里面已经有了，直接用嘛  
 &emsp;&emsp;第五句，已经很明显了  
