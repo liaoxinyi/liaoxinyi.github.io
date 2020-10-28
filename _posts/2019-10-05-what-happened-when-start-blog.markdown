@@ -9,7 +9,7 @@ header-mask: 0.5
 author:     "ThreeJin"
 header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/blog.png"
 tags:
-    - 博客
+    - 工具
 ---
 > 整个博客是基于[HuangXuan前辈](https://github.com/Huxpro/huxpro.github.io)的框架搭建的，这里感谢所有前辈们的踩坑和解答。
 
