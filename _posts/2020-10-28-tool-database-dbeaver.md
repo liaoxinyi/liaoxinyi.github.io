@@ -3,7 +3,7 @@ layout:     post
 title:      "数据库利器——DBeaver"
 subtitle:   "告别Navicat"
 color:      "white"
-date:       20120-10-28
+date:       2020-10-28
 author:     "ThreeJin"
 header-mask: 0.6
 catalog: true
