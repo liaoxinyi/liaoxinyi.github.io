@@ -39,6 +39,14 @@ select spcname, pg_size_pretty(pg_tablespace_size(spcname)) as size from pg_tabl
 select spcname, pg_size_pretty(pg_tablespace_size(oid)) as size from pg_tablespace;
 ```
 
+### 清空表内容
+```sql
+//当表没有其他关系时
+TRUNCATE TABLE 表名;
+//当表中有外键时，要用级联方式删所有关联的数据
+TRUNCATE TABLE 表名 CASCADE;
+```
+
 ### 用户密码相关
 - 创建用户：postgres# CREATE USER xxxx1 WITH PASSWORD 'xxxx';
 - 创建数据库：postgres# CREATE DATABASE xxxx2;
