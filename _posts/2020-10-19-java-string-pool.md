@@ -9,6 +9,7 @@ catalog: true
 header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/string-pool.bmp"
 tags:
     - Java
+    - JVM
 ---
 > 来源于知乎的一次问题讨论：Java 中new String("字面量") 中 "字面量" 是何时进入字符串常量池的?
 

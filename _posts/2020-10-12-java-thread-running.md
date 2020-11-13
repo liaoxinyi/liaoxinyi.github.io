@@ -9,6 +9,7 @@ catalog: true
 header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/java-thread-running.jpg"
 tags:
     - Java
+    - 多线程
 ---
 > 原始资料来源于[程序猿DD：为什么 Java 线程没有Running状态？](https://mp.weixin.qq.com/s?src=11&timestamp=1603758592&ver=2669&signature=E3sH2BNnAev9o4aAmRV*H*akRQXQyEKQ4FMz9AxYzZe74jBApx6LH7IT7NkTbKMUP2przZC9B*mxfvhq8srDTpO*VClnHdII0nBZd7di-QeGZnWUHeEMNw*DN9TLb5LC&new=1)
 
@@ -48,7 +49,7 @@ tags:
 而当 I/O 完成时，则用一种叫中断 （interrupt）的机制来通知 cpu。这也是控制反转 （IoC）机制的一种体现，cpu不用反复去询问硬盘，硬盘对 cpu 说：”别老来问我 IO 做完了没有，完了我自然会通知你的“，这个描述我觉得挺形象的  
 cpu 收到一个来自硬盘的中断信号，并进入中断处理例程，手头正在执行的线程因此被打断，回到 ready 队列。而先前因 I/O 而waiting 的线程随着 I/O 的完成也再次回到 ready 队列，这时 cpu 可能会选择它来执行。这里为啥说是可能，因为并不一定说你这个线程I/O一结束后回到ready队列中就马上轮到你来执行  
 ##### Java的I/O阻塞时
-在Java中，阻塞式I/O时，其实此时的线程也是Runnable状态的。这里牵引出另外一个概念，阻塞式，比如阻塞式方法，阻塞式I/O等等。虽然叫阻塞，但是此时的线程却是Runnable的，有点神奇  
+在Java中，阻塞式I/O时，其实此时的线程也是Runnable状态的（对应的是Ready状态）。这里牵引出另外一个概念：阻塞式，比如阻塞式方法，阻塞式I/O等等。虽然叫阻塞，但是此时的线程却是Runnable的，有点神奇  
 >进行传统上的 IO 操作时，口语上我们也会说“阻塞”，但这个“阻塞”与线程的 BLOCKED 状态是两码事
 
 ### Runnable的真实面目

@@ -9,7 +9,7 @@ catalog: true
 header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/java-message-rmq-bk.jpg"
 tags:
     - Java
-    - Message
+    - 消息队列
 ---
 > 资料来源于网络上各位前辈的总结，比如大佬【高广超】、【纯洁的微笑】等
 
