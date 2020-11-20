@@ -1,12 +1,12 @@
 ---
 layout:     post
 title:      "东拉西扯数据结构-03"
-subtitle:   "HashSet、LinkedHashSet、TreeSet"
+subtitle:   "HashSet、LinkedHashSet、TreeSet、Map、HashMap、ConcurrentHashMap"
 date:       2020-11-20
 author:     "ThreeJin"
-header-mask: 0.5
+header-mask: 0.7
 catalog: true
-header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/datastructure-bkg02.jpg"
+header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/datastructure-bkg04.jpg"
 tags:
     - Java
     - 数据结构
@@ -14,14 +14,14 @@ tags:
 > 《数据结构与算法分析 java语言描述》（原书第3版）+《愚公要移山》-读书笔记
 
 ### 前言
-过关斩将，终于到了老生常谈的各种集合了，集合旗下的各类结构简直多得很，大体上分为两个类别：单列集合和双列结合
+过关斩将，终于到了老生常谈的各种集合了，集合旗下的各类结构简直多得很，大体上分为两个类别：单列集合（Collection接口）和双列结合（Map接口）
 
-### 单列集合的根接口-Collection
+### Collection接口
 【01】
 【02】
-### List根接口和Queue根接口
+### List接口、Queue接口
 List旗下的内容包括Vector、ArrayList和LinkedList等，这块内容可以参考前面，Queue也可以直接参考前面[电梯](https://www.threejinqiqi.fun/2020/11/12/java-datastructure-01/)  
-### Set根接口
+### Set接口
 【03】
 - 元素不重复  
 - 没索引  
@@ -120,9 +120,10 @@ m.put(e, PRESENT)一看e这个key已经存在了，就会将PRESENT替换掉相�
 - HashSet是用Hash表来存储数据，而TreeSet是用二叉树来存储数据  
 - 在不需要排序的时候，还是建议优先使用HashSet，因为速度更快，二叉树需要排序就免不了跳转旋转，所以速度会很慢  
 
-### 双列集合的根接口-Map
+### Map接口
 【09】
-### HashMap-JDK1.8
+### HashMap类
+以JDK1.8为例进行分析  
 【10】
 ##### 内部类  
 【11】
@@ -195,27 +196,87 @@ HaspMap扩容就是就是先计算 新的hash表容量和新的容量阀值，�
 ##### 怎么确保线程安全
 使用ConcurrentHashMap
 
-### ConcurrentHashMap-JDK1.8
+### ConcurrentHashMap类
 
-datastructure-collection19
+##### JDK1.7的实现
+在JDK1.7版本中，ConcurrentHashMap的数据结构是由一个Segment数组和多个HashEntry组成，如下图所示：  
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/datastructure-collection20.jpg)
 
+```java
+static class  Segment<K,V> extends  ReentrantLock implements  Serializable {
+}
+```
 
-##### 总结
-- JDK7中  
-【18】
+主要实现原理是实现了锁分离的思路解决了多线程的安全问题，Segment数组的意义就是将一个大的table分割成多个小的table来进行加锁，也就是上面的提到的锁分离技术，而每一个Segment元素存储的是HashEntry数组+链表，这个和HashMap的数据存储结构一样
 
-数据结构是由一个Segment数组和多个HashEntry组成，主要实现原理是实现了锁分离的思路解决了多线程的安全问题
+- 初始化  
 
-Segment数组的意义就是将一个大的table分割成多个小的table来进行加锁，也就是上面的提到的锁分离技术，而每一个Segment元素存储的是HashEntry数组+链表，这个和HashMap的数据存储结构一样
+1. ConcurrentHashMap的初始化是会通过位与运算来初始化Segment的大小，默认为16，最多65536个  
+2. 每一个Segment元素下的HashEntry的初始化也是按照位于运算来计算
 
+- put操作  
 ConcurrentHashMap 与HashMap和Hashtable 最大的不同在于：put和 get 两次Hash到达指定的HashEntry，第一次hash到达Segment,第二次到达Segment里面的Entry,然后在遍历entry链表
 
-- JDK8中 
-【19】
+从上Segment的继承体系可以看出，Segment实现了ReentrantLock,也就带有锁的功能，当执行put操作时，会进行第一次key的hash来定位Segment的位置，如果该Segment还没有初始化，即通过CAS操作进行赋值，然后进行第二次hash操作，找到相应的HashEntry的位置，这里会利用继承过来的锁的特性，在将数据插入指定的HashEntry位置时（链表的尾端），会通过继承ReentrantLock的tryLock（）方法尝试去获取锁，如果获取成功就直接插入相应的位置，如果已经有线程获取该Segment的锁，那当前线程会以自旋的方式去继续的调用tryLock（）方法去获取锁，超过指定次数就挂起，等待唤醒
 
+- get操作  
+ConcurrentHashMap的get操作跟HashMap类似，只是ConcurrentHashMap第一次需要经过一次hash定位到Segment的位置，然后再hash定位到指定的HashEntry，遍历该HashEntry下的链表进行对比，成功就返回，不成功就返回null
+
+- **size操作**  
+计算ConcurrentHashMap的元素大小是一个有趣的问题，因为他是并发操作的，就是在你计算size的时候，他还在并发的插入数据，可能会导致你计算出来的size和你实际的size有相差（在你return size的时候，插入了多个数据），要解决这个问题，JDK1.7版本用两种方案
+
+1. 方案一：  
+使用不加锁的模式去尝试多次计算ConcurrentHashMap的size，最多三次，比较前后两次计算的结果，结果一致就认为当前没有元素加入，计算的结果是准确的  
+2. 方案二：  
+如果第一种方案不符合，他就会给每个Segment加上锁，然后计算ConcurrentHashMap的size返回  
+
+##### JDK1.8的实现
+数据结构示意【19】
 已经摒弃了Segment的概念，而是直接用Node数组+链表+红黑树的数据结构来实现，并发控制使用Synchronized和CAS来操作，整个看起来就像是优化过且线程安全的HashMap，虽然在JDK1.8中还能看到Segment的数据结构，但是已经简化了属性，只是为了兼容旧版本
 
-- 对比  
+【22类结构图】
+【23】成员变量图
+
+- 成员变量
+【21】
+
+- Node  
+1. ConcurrentHashMap存储结构的基本单元，继承于HashMap中的Entry，用于存储数据  
+2. 是一个链表，但是只允许对数据进行查找，不允许进行修改  
+
+- TreeNode  
+1. 继承自Node，但是数据结构换成了红黑树的数据的存储结构，用于存储数据  
+2. 当链表的节点数大于8时会转换成红黑树的结构，他就是通过TreeNode作为存储结构代替Node来转换成黑红树  
+
+- TreeBin  
+1. 存储树形结构的容器，或者说封装TreeNode的容器  
+2. 提供转换黑红树的一些条件和锁的控制  
+
+- 初始化
+1. ConcurrentHashMap的初始化其实是一个空实现，并没有做任何事  
+2. 默认的初始化操作并不是在构造函数实现的，而是在put操作中实现  
+3. 其他构造函数则参考HashMap即可
+
+- put方法  
+1. 如果没有初始化就先调用initTable（）方法来进行初始化过程  
+2. 如果没有hash冲突就直接CAS插入  
+3. 如果还在进行扩容操作就先进行扩容  
+4. 如果存在hash冲突，就加锁来保证线程安全，这里有两种情况，一种是链表形式就直接遍历到尾端插入，一种是红黑树就按照红黑树结构插入  
+5. 最后一个如果Hash冲突时会形成Node链表，在链表长度超过8，Node数组超过64时会将链表结构转换为红黑树的结构，break再一次进入循环  
+6. 如果添加成功就调用addCount（）方法统计size，并且检查是否需要扩容
+
+- 扩容方法：transfer（）  
+1. 有helpTransfer（）方法的调用多个工作线程一起帮助进行扩容  
+【等待更新】
+
+在并发处理中使用的是乐观锁，当有冲突的时候才进行并发处理，而且流程步骤很清晰，但是细节设计的很复杂，毕竟多线程的场景也复杂  
+
+- get方法  
+1. 计算hash值，定位到该table索引位置，如果是首节点符合就返回  
+2. 如果遇到扩容的时候，会调用标志正在扩容节点ForwardingNode的find方法，查找该节点，匹配就返回  
+3. 以上都不符合的话，就往下遍历节点，匹配就返回，否则最后就返回null
+
+- 总结  
 1. 可以看出JDK1.8版本的ConcurrentHashMap的数据结构已经接近HashMap，相对而言，ConcurrentHashMap只是增加了同步的操作来控制并发
 
 2. 从JDK1.7版本的**ReentrantLock+Segment+HashEntry**，到JDK1.8版本中**synchronized+CAS+HashEntry+红黑树**
