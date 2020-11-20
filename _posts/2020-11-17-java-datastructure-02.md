@@ -887,7 +887,7 @@ InnoDB存储引擎中页的大小为16KB，一般表的主键类型为INT（占�
 
 数据库中的B+Tree索引可以分为聚集索引（clustered index）和辅助索引（secondary index）。上面的B+Tree示例图在数据库中的实现即为聚集索引，聚集索引的B+Tree中的叶子节点存放的是整张表的行记录数据。辅助索引与聚集索引的区别在于辅助索引的叶子节点并不包含行记录的全部数据，而是存储相应行数据的聚集索引键，即主键。当通过辅助索引来查询数据时，InnoDB存储引擎会遍历辅助索引找到主键，然后再通过主键在聚集索引中找到完整的行记录数据  
 
-### B*树（B* tree）
+### B\*树（B\* tree）
 是B+树的变体，在B+树的非根和非叶子结点再增加指向兄弟的指针  
 ![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/b-star-image-01.jpg)
 
