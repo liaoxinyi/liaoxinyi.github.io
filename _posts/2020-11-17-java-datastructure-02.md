@@ -1,7 +1,7 @@
 ---
 layout:     post
 title:      "东拉西扯数据结构-02"
-subtitle:   "二叉树、二叉查找树、平衡二叉树、红黑树、B-Tree、B+Tree、B\*Tree"
+subtitle:   "二叉树、二叉查找树、平衡二叉树、红黑树、B-Tree、B+Tree、B*Tree"
 date:       2020-11-17
 author:     "ThreeJin"
 header-mask: 0.5
