@@ -17,19 +17,19 @@ tags:
 过关斩将，终于到了老生常谈的各种集合了，集合旗下的各类结构简直多得很，大体上分为两个类别：单列集合（Collection接口）和双列结合（Map接口）
 
 ### Collection接口
-【01】
-【02】
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/datastructure-collection01.jpg)  
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/datastructure-collection02.jpg)  
 ### List接口、Queue接口
 List旗下的内容包括Vector、ArrayList和LinkedList等，这块内容可以参考前面，Queue也可以直接参考前面[电梯](https://www.threejinqiqi.fun/2020/11/12/java-datastructure-01/)  
 ### Set接口
-【03】
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/datastructure-collection03.jpg)  
 - 元素不重复  
 - 没索引  
 - 存和取的顺序不一致
 
 ### HashSet类
-【04】
-【05】
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/datastructure-collection04.jpg)  
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/datastructure-collection05.jpg)  
 ##### 特性
 - 元素不重复  
 - 不保证集合中元素的顺序  
@@ -79,16 +79,16 @@ List旗下的内容包括Vector、ArrayList和LinkedList等，这块内容可以
 - 哈希表的存储结构就是：数组+链表，数组的每个元素都是以链表的形式存储的  
 
 #### LinkedHashSet类
-【06】
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/datastructure-collection06.jpg)  
 **继承自HashSet类，底层靠的是LinkedHashMap，也就是HashMap+双向链表**
 
 **所以，可以保证怎么存就怎么取**
 
 #### TreeSet类
-【07】
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/datastructure-collection07.jpg)  
 
 ##### 成员变量
-【08】
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/datastructure-collection08.jpg)  
 
 **TreeSet只使用了NavigableMap的key，这个和HashSet只是用HashMap或者LinkedHashMap的key一样**  
 为什么不再将null作为NavigableMap的value呢？那样还节省内存。这里需要看一下TreeSet的增删方法：  
@@ -121,16 +121,16 @@ m.put(e, PRESENT)一看e这个key已经存在了，就会将PRESENT替换掉相�
 - 在不需要排序的时候，还是建议优先使用HashSet，因为速度更快，二叉树需要排序就免不了跳转旋转，所以速度会很慢  
 
 ### Map接口
-【09】
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/datastructure-collection09.jpg)  
 ### HashMap类
 以JDK1.8为例进行分析  
-【10】
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/datastructure-collection10.jpg)  
 ##### 内部类  
-【11】
-【12】
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/datastructure-collection11.jpg)  
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/datastructure-collection12.jpg)  
 
 1. HashMap最早是在jdk1.2中开始出现的，一直到jdk1.7一直没有太大的变化。但是到了jdk1.8突然进行了一个很大的改动：  
-【14】
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/datastructure-collection14.jpg)  
 
 **之前jdk1.7的存储结构是数组+链表，到了jdk1.8变成了数组+链表+红黑树**  
 
@@ -141,7 +141,7 @@ m.put(e, PRESENT)一看e这个key已经存在了，就会将PRESENT替换掉相�
 **一般在这个时候，往往早就已经扩容了**
 
 ##### 成员变量  
-【13】
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/datastructure-collection13.jpg)  
  
 - initialCapacity初始容量  
 要输入一个2的N次幂的值，及时输入的不是符合要求的值，虚拟机会根据输入的值，找一个离20最近的2的N次幂的值  
@@ -167,11 +167,11 @@ static final int hash(Object key) {
 不容易出现冲突不等于不会出现冲突，所以就需要解决hash值冲突：**开放定址法（发生冲突，继续寻找下一块未被占用的存储地址），再散列函数法，链地址法**
 
 HashMap即是采用了链地址法解决hash值冲突，也就是数组+链表的方式，如下图：  
-【17】
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/datastructure-collection17.jpg)  
 基本思想是将所有哈希地址为i的元素构成一个称为同义词链的单链表，并将单链表的头指针存入哈希表的第i个单元中，因而查找、插入和删除主要在同义词链中进行。链地址法适用于经常进行插入和删除的情况
 
 ##### put(K key, V value)方法  
-【15】
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/datastructure-collection15.jpg)  
 
 - Hashtable对哈希表的散列是用hash值对数组length取模（即除法散列法），因为会用到除法运算，效率低，HashMap中则通过h&(length-1)的方法来代替取模，这是改进  
 - 哈希表的容量一定要是2的整数次幂  
@@ -181,7 +181,7 @@ JDK7是头插法，JDK8采用尾插法
 - 和 Java7 稍微有点不一样的地方就是，Java7 是先扩容后插入新值的，Java8 先插值再扩容
 
 ##### 扩容的流程  
-【16】
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/datastructure-collection16.jpg)  
 
 HaspMap扩容就是就是先计算 新的hash表容量和新的容量阀值，然后初始化一个新的hash表，将旧的键值对重新映射在新的hash表里。如果在旧的hash表里涉及到红黑树，那么在映射到新的hash表中还涉及到红黑树的拆分
 ##### Fail-Fast机制
@@ -231,14 +231,14 @@ ConcurrentHashMap的get操作跟HashMap类似，只是ConcurrentHashMap第一次
 如果第一种方案不符合，他就会给每个Segment加上锁，然后计算ConcurrentHashMap的size返回  
 
 ##### JDK1.8的实现
-数据结构示意【19】
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/datastructure-collection19.jpg)  
 已经摒弃了Segment的概念，而是直接用Node数组+链表+红黑树的数据结构来实现，并发控制使用Synchronized和CAS来操作，整个看起来就像是优化过且线程安全的HashMap，虽然在JDK1.8中还能看到Segment的数据结构，但是已经简化了属性，只是为了兼容旧版本
 
-【22类结构图】
-【23】成员变量图
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/datastructure-collection22.jpg)  
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/datastructure-collection23.jpg)  
 
 - 成员变量
-【21】
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/datastructure-collection21.jpg)  
 
 - Node  
 1. ConcurrentHashMap存储结构的基本单元，继承于HashMap中的Entry，用于存储数据  
