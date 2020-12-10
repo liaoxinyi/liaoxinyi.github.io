@@ -165,7 +165,7 @@ public class RabbitMqConfig {
 ###### Spring Cloud Stream方式
 - 步骤  
 maven坐标：  
-```xml
+```txt
 <dependency> 
     <groupId>org.springframework.cloud</groupId> 
     <artifactId>spring-cloud-starter-stream-rabbit</artifactId>
@@ -184,6 +184,9 @@ spring.cloud.stream.rabbit.bindings.自定义的标识.consumer.bindingRoutingKe
 spring.cloud.stream.rabbit.bindings.自定义的标识.consumer.exchangeType=direct
 #持久化消息的最大存活时间，单位毫秒
 spring.cloud.stream.rabbit.bindings.自定义的标识.consumer.ttl=647
+#队列死信路由配置
+spring.cloud.stream.rabbit.bindings.自定义的标识.consumer.dead-letter-exchange=xxxxxx
+spring.cloud.stream.rabbit.bindings.自定义的标识.consumer.dead-letter-routing-key=xxxxxxx
 ```
 
 2. 使用@Input完成通道配置  
@@ -222,9 +225,11 @@ public class RmqMsgService {
 
 ```txt
 spring.cloud.stream.bindings.自定义的标识.destination=需要绑定的exchange 
-spring.cloud.stream.rabbit.bindings.自定义的标识.producer.routing-key-expression=其他人绑定这个exchange时需要的routing-key    
+#下面路由键的单引号一定不能少，太坑了，排查了好久
+spring.cloud.stream.rabbit.bindings.自定义的标识.producer.routing-key-expression='其他人绑定这个exchange时需要的routing-key'    
 #exchange的类型，不指定默认是topic 
 spring.cloud.stream.rabbit.bindings.自定义的标识.producer.exchangeType=direct
+spring.cloud.stream.bindings.自定义的标识.content-type=application/json
 ```
 
 2. 使用@Output完成通道配置  
@@ -250,10 +255,10 @@ public class RmqSendMsgService {
         JSONObject json = new JSONObject();
         json.put("message",msg);
         Message<JSONObject> message = MessageBuilder.withPayload(json).build();
-        source.output().send(message);
+        source.lsqMessageOutPut().send(message);
     }
 }
-//消息发送
+//消息发送调用
 @Autowired
 private RmqSendMsgService sender;
 //...
