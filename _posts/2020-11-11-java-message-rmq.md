@@ -1,7 +1,7 @@
 ---
 layout:     post
 title:      "这只兔子该怎么玩儿？"
-subtitle:   "RabbitMQ消息中间件的积累-待更新RMQ的事务"
+subtitle:   "RabbitMQ的基础知识和基本使用"
 date:       2020-11-11
 author:     "ThreeJin"
 header-mask: 0.5
@@ -15,11 +15,11 @@ tags:
 
 ### 前言
 之前在线上环境中遇到消息堆积的问题，排查出来原因是消费者抛异常导致AKS未反馈。当时遇到这个问题的时候，才想起来，其实还没有真正梳理一下有关RabbitMQ的一些东西，所以一直计划着写这一篇文章。后面遇到有关的问题，也会持续在这篇文章基础上进行更新  
-### 基本介绍介绍
+### 基本介绍
 ##### 消息中间件
 依旧是老样子，一个产品的产生必定是为了解决某一个场景问题。对于一个大型的软件系统来说，它会有很多的组件或者说模块或者说子系统或者（subsystem or Component or submodule）。那么这些模块的如何通信？这和传统的IPC有很大的区别。传统的IPC很多都是在单一系统上的，模块耦合性很大，不适合扩展（Scalability）；如果使用socket那么不同的模块的确可以部署到不同的机器上，但是还是有很多问题需要解决。比如信息的发送者和接收者如何维持这个连接，如果一方的连接中断，这期间的数据如何方式丢失？如何降低发送者和接收者的耦合度？如何做到load balance？有效均衡接收者的负载？等等  
 消息中间件最主要的作用是解耦，中间件最标准的用法是生产者生产消息传送到队列，消费者从队列中拿取消息并处理，生产者不用关心是谁来消费，消费者不用关心谁在生产消息，从而达到解耦的目的。在分布式的系统中，消息队列也会被用在很多其它的方面，比如：分布式事务的支持，RPC的调用等等  
-##### AMQP
+##### AMQP(Advanced Message Queuing Protocol)
 虽然同步消息通讯有很多公开标准，如 COBAR的 IIOP ，或者是 SOAP 等。但是在异步消息处理中却不是这样，只有大企业有一些商业实现（如微软的 MSMQ ，IBM 的 Websphere MQ 等），因此，在 2006 年的 6 月，Cisco 、Redhat、iMatix 等联合制定了 AMQP 的公开标准。AMQP，即Advanced Message Queuing Protocol，高级消息队列协议，是应用层协议的一个开放标准，为面向消息的中间件设计，基于此协议的客户端与消息中间件可传递消息，并不受产品、开发语言等条件的限制。消息中间件主要用于组件之间的解耦，消息的发送者无需知道消息使用者的存在，反之亦然。AMQP的主要特征是面向消息、队列、路由（包括点对点和发布/订阅）、可靠性、安全  
 下面是以RMQ为例的AMQP的大致模型：  
 ![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/java-message-amqp-structure.jpg)
@@ -31,8 +31,26 @@ tags:
 - **Client C**  
 也叫Consumer，数据的接收方。Consumersattach to a broker server (RabbitMQ) and subscribe to a queue。把queue比作是一个有名字的邮箱。当有Message到达某个邮箱后，RabbitMQ把它发送给它的某个订阅者即Consumer。当然可能会把同一个Message发送给很多的Consumer。在这个Message中，只有payload，label已经被删掉了。对于Consumer来说，它是不知道谁发送的这个信息的。就是协议本身不支持。但是当然了如果Producer发送的payload包含了Producer的信息就另当别论了  
 
-##### RabbitMQ
-RabbitMQ是一个开源的AMQP实现，最初起源于金融系统，用于在分布式系统中存储转发消息，在易用性、扩展性、高可用性等方面表现不俗。服务器端用Erlang语言编写，支持多种客户端，如：Python、Ruby、.NET、Java、JMS、C、PHP、ActionScript、XMPP、STOMP等，支持AJAX。用于在分布式系统中存储转发消息，在易用性、扩展性、高可用性等方面表现不俗  
+##### RabbitMQ特点
+RabbitMQ是一个开源的AMQP实现，最初起源于金融系统，用于在分布式系统中存储转发消息，在易用性、扩展性、高可用性等方面表现不俗。服务器端用Erlang语言编写，支持多种客户端，如：Python、Ruby、.NET、Java、JMS、C、PHP、ActionScript、XMPP、STOMP等，支持AJAX。用于在分布式系统中存储转发消息，在易用性、扩展性、高可用性等方面表现不俗    
+- 可靠性  
+持久化、传输确认及发布确认  
+- 灵活路由  
+一些内置交换器提供典型的路由功能，针对更复杂的路由功能，可以将多个交换器绑定在一起，也可以通过插件机制来实现自己的交换器  
+- 扩展性  
+多个RabbitMQ节点可以组成一个集群，可以动态扩展集群中节点  
+- 高可用性  
+队列可以在集群中的机器上设置镜像，使得在部分节点出现问题的情况下队列依然可用  
+- 多种协议  
+除了原生支持AMQP协议，还支持STOMP、MQTT等多种消息中间件协议  
+- 多语言客户端  
+支持常用语言，如Java、Python、Ruby、PHP、C#、JavaScript等  
+- 管理界面  
+提供简易用户界面( 默认http://localhost:15672 )，可以监控和管理消息、集群中的节点等  
+- 插件机制  
+提供了许多插件，以实现从多方面进行扩展，也可以编写自己的插件  
+
+##### RabbitMQ概念
 一般消息队列都离不开三个东西：发消息者、队列和收消息者。RabbitMQ在此基础之上又继续增加了一个交换机（有些时候也被称为路由器）角色，这样发消息者和队列就没有直接联系, 转而变成发消息者把消息给交换机, 交换机根据调度策略再把消息再给队列。因此在RabbitMQ里面，有四个东西需要值得注意：**虚拟主机（Virtual Host），交换机（Exchange），队列（Queue），和绑定（Binding）**  
 当然，有一些文章里面也把整个消息体分得比较详细，具体如下图：  
 ![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/java-message-rmq-structure.jpg)
@@ -43,15 +61,17 @@ RabbitMQ是一个开源的AMQP实现，最初起源于金融系统，用于在�
 交换机只会用于转发消息，不会做存储，如果没有队列绑定到这个交换机的话，它会直接丢弃掉生产者发送过来的消息，在启用ack模式后，交换机找不到队列会返回错误    
 - **绑定（Binding）**  
 既然说到了绑定，那是靠什么绑定的呢？靠的就是**路由键**，消息到交换机的时候，交换机会转发到对应的队列中，那么究竟转发到哪个队列，就要根据该路由键。至于绑定，就是交换机需要和队列相绑定，**注意是多对多关系，不一定只会一对多**  
-1. binding key：在绑定（Binding）Exchange与Queue的同时，一般会指定一个binding key。在绑定多个Queue到同一个Exchange的时候，这些Binding允许使用相同的binding key  
-2. routing key：这个就是我们说得最多的路由键，消费者将消息发送给Exchange时，一般会指定一个routing key  
-  
+1. binding key：可以认为属于队列，在绑定（Binding）Exchange与Queue的同时，一般会指定一个binding key。在绑定多个Queue到同一个Exchange的时候，这些Binding允许使用相同的binding key  
+2. routing key：这个就是我们说得最多的路由键，消费者将消息发送给Exchange时，一般会指定一个routing key，Exchange此时就会将该条消息发送给binding key和routing key匹配的队列里面去    
+
 - **连接（Connection）**
-就是一个TCP的连接。Producer和Consumer都是通过TCP连接到RabbitMQ Server的。以后我们可以看到，程序的起始处就是建立这个TCP连接 
+就是一个TCP的连接。Producer和Consumer都是通过TCP连接到RabbitMQ Server的。以后我们可以看到，程序的起始处就是建立这个TCP连接，一般会创建一个Connection，然后在此基础上创建多个Channel 
 - **通道（Channel）**
-虚拟连接。它建立在上述的TCP连接中。数据流动都是在Channel中进行的。也就是说，一般情况是程序起始建立TCP连接，第二步就是建立这个Channel。代码层次中，我们大部分的业务操作是在Channel这个接口中完成的，包括定义Queue、定义Exchange、绑定Queue与Exchange、发布消息等  
+这其实是一个虚拟的连接，也就是逻辑意义上的链接。一般情况是程序起始建立TCP连接，第二步就是建立这个Channel  
+客户端通过在Connection上创建不同的AMQP信道（Channel），每个信道都会被指派一个唯一的ID。信道是建立在Connection之上的虚拟连接，RabbitMQ的每条指令都是基于信道的，代码层次中，我们大部分的业务操作是在Channel这个接口中完成的，包括定义Queue、定义Exchange、绑定Queue与Exchange、发布消息等  
 **那么，为什么使用Channel，而不是直接使用TCP连接？**  
-对于OS来说，建立和关闭TCP连接是有代价的，频繁的建立关闭TCP连接对于系统的性能有很大的影响，而且TCP的连接数也有限制，这也限制了系统处理高并发的能力。但是，在TCP连接中建立Channel是没有上述代价的。对于Producer或者Consumer来说，可以并发的使用多个Channel进行Publish或者Receive  
+首先，对于OS来说，建立和关闭TCP连接是有代价的，频繁的建立关闭TCP连接对于系统的性能有很大的影响，而且TCP的连接数也有限制，这也限制了系统处理高并发的能力。但是，在TCP连接中建立Channel是没有上述代价的。对于Producer或者Consumer来说，可以并发的使用多个Channel进行Publish或者Receive  
+其次，每个线程一个信道，信道复用了Connection的TCP连接，同时RabbitMQ可以确保每个线程的独立性。当每个信道流量不大时，多个信道可以复用一个Connection，但当信道中的流量很大时，一个Connection就会出现性能瓶颈，这时就需要将流量分摊到多个Connection了  
 - **队列（Queue）**  
 这里有一个很有意思的点，多个消费者可以订阅同一个Queue，这时Queue中的消息会被平均分摊给多个消费者进行处理，而**不是每个消费者都收到所有的消息并处理**   
 
@@ -70,27 +90,6 @@ headers 也是根据规则匹配, 相较于 direct 和 topic 固定地使用 rou
 Fanout Exchange 消息广播的模式，不管路由键或者是路由模式，会把消息发给绑定给它的全部队列，如果配置了routing_key会被忽略  
 
 **AMQP规范里还提到两种Exchange Type，分别为system与自定义**
-
-### 队列和消息的那些事
-##### TTL队列/消息
-TTL（time to live）指生存时间  
-- 支持消息的过期时间，在消息发送时可以指定  
-- 支持队列过期时间，在消息入队列开始计算时间，只要超过了队列的超时时间配置，那么消息就会自动的清除  
-
-##### 死信队列
-死信队列：DLX，Dead-Letter-Exchange，利用DLX，当消息在一个队列中变成死信（dead message，就是没有任何消费者消费）之后，他能被重新publish到另一个Exchange，这个Exchange就是DLX  
-- 消息变为死信的几种情况    
-1. 消息被拒绝（basic.reject/basic.nack）同时requeue=false（不重回队列）  
-2. TTL过期  
-3. 队列达到最大长度  
-- 死信队列的设置  
-1. 设置Exchange和Queue，然后进行绑定  
-2. Exchange: dlx.exchange(自定义的名字)  
-3. queue: dlx.queue（自定义的名字）  
-4. routingkey: #（#表示任何routingkey出现死信都会被路由过来）  
-5. 最后在然后正常的声明交换机、队列、绑定时，在队列的配置参数上加上一个参数：`arguments.put("x-dead-letter-exchange","dlx.exchange(自定义的名字)");`  
-
-DLX也是一个正常的Exchange，和一般的Exchange没有任何的区别，他能在任何的队列上被指定，实际上就是设置某个队列的属性。当这个队列出现死信的时候，RabbitMQ就会自动将这条消息重新发布到Exchange上去，进而被路由到另一个队列。可以监听这个队列中的消息作相应的处理，这个特性可以弥补rabbitMQ以前支持的immediate参数的功能  
 
 ##### 消息回执（Message acknowledgment）
 在实际应用中，可能会发生消费者收到Queue中的消息，但没有处理完成就宕机（或出现其他意外）的情况，这种情况下就可能会导致消息丢失。为了避免这种情况发生，我们可以要求消费者在消费完消息后发送一个回执给RabbitMQ，RabbitMQ收到消息回执（Message acknowledgment）后才将该消息从Queue中移除；如果RabbitMQ没有收到回执并检测到消费者的RabbitMQ连接断开，则RabbitMQ会将该消息发送给其他消费者（如果存在多个消费者）进行处理。这里不存在timeout概念，一个消费者处理消息时间再长也不会导致该消息被发送给其他消费者，除非它的RabbitMQ连接断开  
@@ -161,7 +160,11 @@ public class RabbitMqConfig {
         }
     }
 ```
-
+另外，如果没有在第一步中进行rmq的配置类配置，这里也可以直接定义路由、路由键、路由名来消费
+```java
+@RabbitListener(bindings = @QueueBinding(value = @Queue("${支持配置文件}"), exchange = @Exchange("${支持配置文件}"),
+            key = "${支持配置文件}"), concurrency = "1-5")
+```
 ###### Spring Cloud Stream方式
 - 步骤  
 maven坐标：  
@@ -175,18 +178,26 @@ maven坐标：
 1. 配置application.properties  
 
 ```txt
+spring.cloud.stream.binders.dispatchServiceMsgCacheConsumeChannel.type=rabbit
 spring.cloud.stream.bindings.自定义的标识.destination=需要订阅的exchange
 spring.cloud.stream.bindings.自定义的标识.group=消费者的队列
+#让队列名就是设定的名字，否则默认为【路由名.队列名】
+spring.cloud.stream.rabbit.bindings.自定义的标识.consumer.queue-name-group-only=true
 #消息的类型：application/json，缺失则为默认值null
-#spring.cloud.stream.bindings.自定义的标识.contentType=application/json
+#spring.cloud.stream.bindings.自定义的标识.content-type=application/json
 spring.cloud.stream.rabbit.bindings.自定义的标识.consumer.bindingRoutingKey=订阅的exchange的RoutingKey
 #exchange的类型
 spring.cloud.stream.rabbit.bindings.自定义的标识.consumer.exchangeType=direct
 #持久化消息的最大存活时间，单位毫秒
 spring.cloud.stream.rabbit.bindings.自定义的标识.consumer.ttl=647
-#队列死信路由配置
+#消息手动回执ack（一般配合死信队列使用）
+spring.cloud.stream.rabbit.bindings.自定义的标识.consumer.acknowledge-mode=MANUAL
+#队列死信路由配置（如果有必要）
+#auto开关需要打开，否则不会按照指定的路由配置死信队列，开关打开后会自动额外成一个以该队列名为名的路由键
+spring.cloud.stream.rabbit.bindings.自定义的标识.consumer.auto-bind-dlq=true
 spring.cloud.stream.rabbit.bindings.自定义的标识.consumer.dead-letter-exchange=xxxxxx
 spring.cloud.stream.rabbit.bindings.自定义的标识.consumer.dead-letter-routing-key=xxxxxxx
+spring.cloud.stream.rabbit.bindings.自定义的标识.consumer.dead-letter-queue-name=xxxxxxx
 ```
 
 2. 使用@Input完成通道配置  
@@ -207,11 +218,17 @@ public interface RmqInputChannel {
 public class RmqMsgService {
     //通过通道标识，对应识别去消费哪一个队列里面的数据，建议使用JSONObject来进行消费，也可以使用String
     @StreamListener(RmqInputChannel.AA_BB)
-    public void receiveQueueFromAb(JSONObject message){
+    //如果消费逻辑不处理任何东西，不要使用@Header注解，否则消费时消息正常消费，但是会抛异常
+    public void receiveQueueFromAb(JSONObject message,@Header(AmqpHeaders.CHANNEL) Channel channel,
+                                                     @Header(AmqpHeaders.DELIVERY_TAG) Long deliveryTag){
         try {
             //处理逻辑
+            //do something
+            //确认消息
+            channel.basicAck(deliveryTag, false);
         } catch (Exception e) {
             //抛出ImmediateAcknowledgeAmqpException后，生产者也会受到本次消费的AKS，这样不会导致消息堆积
+            //抛出AmqpRejectAndDontRequeueException后，则消息会被拒绝，且requeue=false，此时会进入死信队列
             //或者也可以直接记录日志，不抛出异常也可以
             throw new ImmediateAcknowledgeAmqpException("错误码", e);
         }
@@ -224,6 +241,7 @@ public class RmqMsgService {
 1. 配置application.properties  
 
 ```txt
+spring.cloud.stream.binders.dispatchServiceMsgCacheConsumeChannel.type=rabbit
 spring.cloud.stream.bindings.自定义的标识.destination=需要绑定的exchange 
 #下面路由键的单引号一定不能少，太坑了，排查了好久
 spring.cloud.stream.rabbit.bindings.自定义的标识.producer.routing-key-expression='其他人绑定这个exchange时需要的routing-key'    
@@ -243,24 +261,29 @@ public interface RmqOutPutChannel {
 }
 ```
 
-3. 消息接收类和方法  
+3. 消息发送类
 ```java
-//消费发送实现类
+//消费发送类
 @EnableBinding(RmqOutPutChannel.class)
 public class RmqSendMsgService {
     @Autowired
     RmqOutPutChannel source;
 
-    public void send(DeviceMessage msg){
-        JSONObject json = new JSONObject();
-        json.put("message",msg);
-        Message<JSONObject> message = MessageBuilder.withPayload(json).build();
+    public void lsqSend(XxxDTO msg){
+        JSONObject msgJson = JSONObject.parseObject(XxxDTO.toString());
+        Message<JSONObject> message = MessageBuilder.withPayload(msgJson).build();
         source.lsqMessageOutPut().send(message);
     }
 }
+
+```
+
+4. 消息发送
+```java
 //消息发送调用
 @Autowired
-private RmqSendMsgService sender;
-//...
-sender.send(deviceMessage);
+private RmqSendMsgService rmqSendMsgService;
+//方法里面调用
+XxxDTO msg=new XxxDTO();
+rmqSendMsgService.lsqSend(msg);
 ```
