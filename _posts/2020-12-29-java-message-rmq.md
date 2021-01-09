@@ -1,7 +1,7 @@
 ---
 layout:     post
 title:      "这只兔子该怎么玩儿？"
-subtitle:   "Channel的API、死信/临时/自动过期/延时队列、保证消息不丢失方案、生产者的Confirm/Return"
+subtitle:   "Channel的API、死信/临时/自动过期/延时队列、保证消息不丢失方案"
 date:       2020-12-29
 author:     "ThreeJin"
 header-mask: 0.5
@@ -20,16 +20,17 @@ tags:
 ### Channel的API  
 这里主要采用的是Channel的方式，话不多说直接上代码  
 ##### 队列参数  
-|  参数名   | 功能  |
-|  ----  | ----  |
-| x-dead-letter-exchange  | 死信交换器 |
-| x-dead-letter-routing-key  | 死信消息的可选路由键 |
-|  x-expires | 队列在指定毫秒数后被删除 |
-|  x-ha-policy | 创建HA队列 |
-| x-ha-nodes  | HA队列的分布节点 |
-|  x-max-length | 队列的最大消息数 |
-| x-message-ttl  | 毫秒为单位的消息过期时间，队列级别 |
-| x-max-priority  | 最大优先值为255的队列优先排序功能 |
+
+|参数名|功能|
+|----|----|
+|x-dead-letter-exchange|死信交换器|
+|x-dead-letter-routing-key|死信消息的可选路由键|
+|x-expires|队列在指定毫秒数后被删除|
+|x-ha-policy|创建HA队列|
+|x-ha-nodes|HA队列的分布节点|
+|x-max-length|队列的最大消息数|
+|x-message-ttl|毫秒为单位的消息过期时间，队列级别|
+|x-max-priority|最大优先值为255的队列优先排序功能|
 
 - x-expires说明  
  x-expires 参数控制 queue 被自动删除前可以处于未使用状态的时间。未使用的意思是 queue 上没有任何 consumer ，queue 没有被重新声明，并且在过期时间段内未调用过 basic.get 命令。该方式可用于，例如，RPC-style 的回复 queue, 其中许多 queue 会被创建出来，但是却从未被使用  
@@ -375,31 +376,3 @@ RabbitMQ延迟队列，主要是借助消息的TTL（Time to Live）和死信exc
 通过声明交换器(channel.exchangeDeclare)时添加 alternate-exchange参数 来实现，也可通过Policy(策略)的方式实现，如果备份交换器和mandatory参数一同使用，则前者的优先级更高  
 备份交换器可以在不设置mandatory参数的情况下，将未路由的消息存储在RabbitMQ中（未路由成功的消息通过备份交换器，路由到其绑定队列），再在需要的时候去处理这些消息  
 如果没有设置mandatory参数，消息在未路由成功的情况下将会丢失；如果设置了mandatory参数，那么需要添加ReturnListener逻辑，生产者的代码将变复杂  
-
-### 生产者的Confirm/Return
-- 配置启用生产者的发布确认和发布退回机制
-`spring.rabbitmq.publisher-confirms = true`  
-`spring.rabbitmq.publisher-returns = true`  
-
-- 分别实现RabbitTemplate中两个接口  
-```java
-/**
- * 确认消息到达Broker时返回ack=true，否则返回ack=true
- */
-public interface ConfirmCallback {
-    void confirm(CorrelationData correlationData, boolean ack, String cause);
-
-}
-/**
- * 需要把mandatory也设为true才会启用此回调，在未路由到任何队列时会调用
- */
-public interface ReturnCallback {
-    void returnedMessage(Message message, int replyCode, String replyText,
-            String exchange, String routingKey);
-}
-```
-
-- 将以上两个实现类注入RabbitTemplate实例中  
-
-`rabbitTemplate.setReturnCallback(messageReturnCallback);`  
-`rabbitTemplate.setConfirmCallback(messageConfirmCallback); `  
