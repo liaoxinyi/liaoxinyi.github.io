@@ -6,7 +6,7 @@ date:       2021-01-11
 author:     "ThreeJin"
 header-mask: 0.5
 catalog: true
-header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/java-message-rmq-bk.jpg"
+header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/kafka.png"
 tags:
     - Java
     - 消息队列

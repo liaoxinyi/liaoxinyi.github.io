@@ -6,7 +6,7 @@ date:       2020-11-21
 author:     "ThreeJin"
 header-mask: 0.5
 catalog: true
-header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/datastructure-bkg02.jpg"
+header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/datastructrue-02.jpg"
 tags:
     - Java
     - 数据结构

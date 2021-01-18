@@ -6,7 +6,7 @@ date:       2020-12-29
 author:     "ThreeJin"
 header-mask: 0.5
 catalog: true
-header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/java-message-rmq-bk.jpg"
+header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/rmq-2021-1-18.jpg"
 tags:
     - Java
     - 消息队列
@@ -21,16 +21,16 @@ tags:
 这里主要采用的是Channel的方式，话不多说直接上代码  
 ##### 队列参数  
 
-|参数名|功能|
-|----|----|
-|x-dead-letter-exchange|死信交换器|
-|x-dead-letter-routing-key|死信消息的可选路由键|
-|x-expires|队列在指定毫秒数后被删除|
-|x-ha-policy|创建HA队列|
-|x-ha-nodes|HA队列的分布节点|
-|x-max-length|队列的最大消息数|
-|x-message-ttl|毫秒为单位的消息过期时间，队列级别|
-|x-max-priority|最大优先值为255的队列优先排序功能|
+|参数名|功能|  
+|----|----|  
+|x-dead-letter-exchange|死信交换器|  
+|x-dead-letter-routing-key|死信消息的可选路由键|  
+|x-expires|队列在指定毫秒数后被删除|  
+|x-ha-policy|创建HA队列|  
+|x-ha-nodes|HA队列的分布节点|  
+|x-max-length|队列的最大消息数|  
+|x-message-ttl|毫秒为单位的消息过期时间，队列级别|  
+|x-max-priority|最大优先值为255的队列优先排序功能|  
 
 - x-expires说明  
  x-expires 参数控制 queue 被自动删除前可以处于未使用状态的时间。未使用的意思是 queue 上没有任何 consumer ，queue 没有被重新声明，并且在过期时间段内未调用过 basic.get 命令。该方式可用于，例如，RPC-style 的回复 queue, 其中许多 queue 会被创建出来，但是却从未被使用  
