@@ -6,7 +6,7 @@ date:       2021-01-20
 author:     "ThreeJin"
 header-mask: 0.5
 catalog: true
-header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/kafka.png"
+header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/websocket02.jpg"
 tags:
     - WebSocket
     - Java
