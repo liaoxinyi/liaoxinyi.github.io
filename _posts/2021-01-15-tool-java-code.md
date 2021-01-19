@@ -16,7 +16,8 @@ tags:
 
 ### 各种拦截器
 ##### 统一结果&异常
-- ResultResponseAdvice  
+- **ResultResponseAdvice**
+
 ```java
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;
@@ -103,7 +104,8 @@ public class ResultResponseAdvice implements ResponseBodyAdvice<Object> {
 }
 ```
 
-- ResultVO_IGNORE  
+- **ResultVO_IGNORE**
+
 ```java
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -385,7 +387,8 @@ public class XxxDTO {
 
 ### 各种Utils
 ##### SpringUtils
-- 代码  
+- 代码
+
 ```java
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -824,7 +827,8 @@ public class DateUtil {
 
 ##### Bean拷贝
 
-- BeanCopyUtil  
+- **BeanCopyUtil**
+
 ```java
 
 import org.springframework.beans.BeanUtils;
@@ -870,7 +874,8 @@ public class BeanCopyUtil extends BeanUtils {
 
 ```
 
-- BeanCopyUtilCallBack  
+- **BeanCopyUtilCallBack**
+
 ```java
 @FunctionalInterface
 public interface BeanCopyUtilCallBack <S, T> {
@@ -883,7 +888,7 @@ public interface BeanCopyUtilCallBack <S, T> {
 }
 ```
 
-- 使用  
+- **使用**  
 `List<NewXxx> newXxxList =BeanCopyUtil.copyListProperties(oldXxxList, NewXxx::new);`  
 
 

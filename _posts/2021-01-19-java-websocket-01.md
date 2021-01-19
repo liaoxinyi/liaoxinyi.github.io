@@ -19,8 +19,8 @@ tags:
 
 ### 一些概念
 ##### WebSocket是个啥？
-电梯：https://blog.csdn.net/moshowgame/article/details/80275084
-WebSocket协议是基于TCP的一种新的网络协议。它实现了浏览器与服务器全双工(full-duplex)通信——允许服务器主动发送信息给客户端
+
+WebSocket协议是基于TCP的一种新的网络协议。它实现了浏览器与服务器全双工(full-duplex)通信，允许服务器主动发送信息给客户端
 
 ##### 特点
 既然已经有了HTTP协议，为什么还需要另一个协议？因为HTTP协议有一个缺陷：**通信只能由客户端发起，HTTP 协议做不到服务器主动向客户端推送信息**
