@@ -1,7 +1,7 @@
 ---
 layout:     post
-title:      "就决定是你了，Kafka"
-subtitle:   "一些概念、消费者/生产者代码"
+title:      "就决定是你了，Kafka-01"
+subtitle:   "概念、基本原理、消费者/生产者代码"
 date:       2021-01-11
 author:     "ThreeJin"
 header-mask: 0.5
@@ -11,13 +11,19 @@ tags:
     - Java
     - 消息队列
 ---
-> 资料来源于网络上各位前辈（诗心客等）的总结
+> 部分资料来源于网络上各位前辈（诗心客、柳树的絮叨叨、芋道源码等）
 
 ### 前言
-决定开始整理Kafka相关的东西的时候，大概是在去年年初，前前后后拖了这么久。俗话说，好记性不如烂笔头，整理的过程也算是一个重新认识的过程吧，话不多说，直接开搞。
-
+决定开始整理Kafka相关的东西的时候，大概是在去年年初，前前后后拖了这么久。俗话说，好记性不如烂笔头，整理的过程也算是一个重新认识的过程吧，话不多说，直接开搞
 ### 概念和基本功能
 ##### Kafka是个啥？
+
+官方对于kafka的说明是这样的：
+
+>Kafka is used for building real-time data pipelines and streaming apps. It is horizontally scalable, fault-tolerant, wicked fast, and runs in production in thousands of companies.
+
+核心关注的东西：**这是一个实时数据处理系统，可以横向扩展、高可靠，而且还变态快**，在这之前，我的印象里只有在大数据的情况下才会使用kafka。
+
 Kafka由LinkedIn公司通过Scala语言开发，并捐献给Apache基金会了。我们常常听到的kafka其实更多的是它的消息队列的功能，其实kafka是一个分布式的流处理平台，处理和管理数据流向的平台(消息队列只是其中一个功能)。
 
 ##### 基本功能
@@ -56,8 +62,112 @@ Kafka由LinkedIn公司通过Scala语言开发，并捐献给Apache基金会了�
 kafka已成为大数据的重要组件，与zookeeper等组件配合，在大数据领域应用非常广泛，技术非常成熟  
 - 事务消息的支持  
 在kafka中使用`@Transactional`或`KafkaTemplate`的`executeInTransaction`方法很容易实现事务消息  
-  
-  
+
+### 基本原理
+写到这里，我开始想一个问题：**为什么需要消息中间件？**
+
+- **解耦消息的生产和消费**  
+- **缓冲**
+
+前面一个比较好理解，这里说一下缓冲具体是什么意思。通过解耦，消费者在消费数据时更加的灵活，不必每次消息一产生就要马上去处理（虽然通常消费者侧也会有线程池等缓冲机制），可以等自己有空了的时候，再过来消息中间件这里取数据进行处理。这就是消息中间件带来的缓冲作用
+
+##### 角色说明
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/kafka03.jpg)  
+
+- 特征
+
+1. kafka支持消息持久化
+
+2. **消费端是主动拉取数据，消费状态和订阅关系由客户端负责维护**
+
+3. 消息消费完后，不会立即删除，会保留历史消息。因此支持多订阅时，消息只会存储一份就可以
+
+- 角色说明
+
+1. **broker**：kafka集群中包含一个或者多个服务实例（节点），这种服务实例被称为broker（一个broker就是一个节点/一个服务器）
+
+2. **topic**：每条发布到kafka集群的消息都属于某个类别，这个类别就叫做topic
+
+3. **partition**:
+
+partition是一个物理上的概念，每个topic包含一个或者多个partition，发布者发到某个topic的消息会根据指定的规则被均匀的分布到其下的多个partition
+
+一个broker服务下，可以创建多个分区，broker数与分区数没有关系
+
+在kafka中，每一个分区会有一个编号：编号从0开始
+
+每一个分区内的数据是有序的，但全局的数据不能保证是有序的。（有序是指生产什么样顺序，消费时也是什么样的顺序）
+
+4. **segment**：一个partition当中存在多个segment文件段，每个segment分为两部分`.log`文件和`.index`文件
+
+5. **producer**：消息的生产者，负责发布消息到kafka的broker中
+
+6. **consumer**：消息的消费者，向kafka的broker中读取消息的客户端
+
+7. **consumergroup**：
+
+消费者组，每一个consumer属于一个特定的consumergroup（可以为每个consumer指定groupName）,**同一个组中的消费者对于同一条消息只消费一次**
+
+每个消费者组都有一个ID，即group ID。组内的所有消费者协调在一起来消费一个订阅主题( topic)的所有分区(partition)
+
+**每个分区只能由同一个消费组内的一个消费者(consumer)来消费，但每个分区是可以由不同的消费组同时来消费的**
+
+8. **.log**：存放生产者发送的数据文件
+
+9. **.index**：存放`.log`文件的数据索引值，用于加快数据的查询速度
+
+##### 角色理解
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/kafka01.jpg)  
+
+以topic+分区进行组织，每一个topic可以创建多个分区，每一个分区包含单独的文件夹，并且是多副本机制，即topic的每一个分区会有Leader与Follower，并且Kafka内部有机制保证topic的某一个分区的Leader与follow不会存在在同一台机器，并且每一台broker会尽量均衡的承担各个分区的Leader，当然在运行过程中如果不均衡，可以执行命令进行手动重平衡。Leader节点承担一个分区的读写，follow节点只负责数据备份。
+
+- **Leader与Follower**
+
+1. Kafka 的负载均衡主要依靠分区 Leader 节点的分布情况，分区的Leader节点负责读写，而Follower节点负责数据同步
+
+2. 如果Leader分区所在的Broker机器发生宕机，会触发主从节点的切换，会在剩下的follow节点中选举产生一个新的Leader节点
+
+3. 如果某一个分区有三个副本因子，就算其中一个挂掉，那么只会剩下的两个中，选择一个leader。此时不会在其他的broker中另启动一个副本（因为在另一台启动的话，存在数据传递，只要在机器之间有数据传递，就会长时间占用网络IO）
+
+4. ack的作用：①ack=0代表不等broker端确认就直接返回，即客户端将消息发送到网络中就返回发送成功②ack=1代表Leader节点接受并存储后向客户端返回成功③ack=-1代表Leader节点和所有的Follower节点接受并成功存储再向客户端返回成功
+
+- **partition与consumergroup**
+
+1. **partition数量决定了每个consumer group中并发消费者的最大数量**
+
+2. 某一个主题下的分区数，对于消费该主题的同一个消费组下的消费者数量，应该小于等于该主题下的分区数
+
+3. 分区数越多，同一时间可以有越多的消费者来进行消费，消费数据的速度就会越快，提高消费的性能
+
+- **partition replicas与ISR**
+
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/kafka04.jpg) 
+
+1. 副本因子/副本数（replication-factor）：控制消息保存在几个broker（服务器）上，一般情况下副本数等于broker的个数
+
+2. 副本因子操作以分区为单位的。每个分区都有各自的主副本（Leader）和从副本（Follower）
+
+3. 处于同步状态的副本（当前可用的副本）叫做in-sync-replicas(ISR)
+
+##### 消息写入时发生了什么？
+- 正常过程
+
+1. kafka以topic来进行消息管理，每个topic包含多个partition，每个partition对应一个逻辑log，由多个segment组成
+
+2. 每个segment中存储多条消息，消息id由其逻辑位置决定，即从消息id可直接定位到消息的存储位置，避免id到位置的额外映射
+
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/kafka02.jpg) 
+
+3. 每个part在内存中对应一个index，记录每个segment中的第一条消息偏移
+
+4. 发布者发到某个topic的消息会被均匀的分布到多个partition上（或根据用户指定的路由规则进行分布），broker收到发布消息后会往对应partition的最后一个segment上添加该消息，当某个segment上的消息条数达到配置值或消息发布时间超过阈值时，segment上的消息会被flush到磁盘，只有flush到磁盘上的消息订阅者才能订阅到，segment达到一定的大小后将不会再往该segment写数据，broker会创建新的segment
+
+- 负载均衡
+
+1. producer可以自定义发送到哪个partition的路由规则。默认路由规则：hash(key)%numPartitions，如果key为null则随机选择一个partition
+
+2. 自定义路由：如果key是一个user id，可以把同一个user的消息发送到同一个partition，这时consumer就可以从同一个partition读取同一个user的消息
+
 ### 实战-消费者  
 理论是认识一个技术的基础，实战才是硬道理，这里以SpringBoot继承kafka为例  
 ##### 依赖
