@@ -80,9 +80,9 @@ public class XxxFirstHandler extends XxxBaseHandler {
 
     @Override
     public  void handleObject(Object object) {
-        boolean continueHandle=Boolean.TRUE;
-        //do something to change {@code continueHandle}  to {@code Boolean.FALSE}  and finish this handle.
-        if (continueHandle&&null!=this.nextHandler) {
+        //do something .
+        //if finish handling-work, then {@code return}
+        if (null!=this.nextHandler) {
             this.nextHandler.handleObject(object);
         }
     }
@@ -93,9 +93,9 @@ public class XxxSecondHandler extends XxxBaseHandler {
 
     @Override
     public  void handleObject(Object object) {
-        boolean continueHandle=Boolean.TRUE;
-        //do something to change {@code continueHandle}  to {@code Boolean.FALSE}  and finish this handle.
-        if (continueHandle&&null!=this.nextHandler) {
+        //do something .
+        //if finish handling-work, then {@code return}
+        if (null!=this.nextHandler) {
             this.nextHandler.handleObject(object);
         }
     }
@@ -106,9 +106,9 @@ public class XxxThirdHandler extends XxxBaseHandler {
 
     @Override
     public  void handleObject(Object object) {
-        boolean continueHandle=Boolean.TRUE;
-        //do something to change {@code continueHandle}  to {@code Boolean.FALSE}  and finish this handle.
-        if (continueHandle&&null!=this.nextHandler) {
+        //do something .
+        //if finish handling-work, then {@code return}
+        if (null!=this.nextHandler) {
             this.nextHandler.handleObject(object);
         }
     }
