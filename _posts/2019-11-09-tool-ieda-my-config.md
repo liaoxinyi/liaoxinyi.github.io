@@ -13,6 +13,12 @@ tags:
 ---
 > 古有云，欲善其工必先利其器。
 
+### Maven相关
+##### 删除自定义脚手架
+脚手架配置文件路径：C:\Users${user}.IntelliJIdea${version}\system\Maven\Indices  
+文件名：UserArchetypes.xml  
+找到想要删除的自定义脚手架，删除，然后重启IDEA即生效
+
 ### 输入相关
 ##### 文件编码格式
 - File Encoding设置为UTF-8
