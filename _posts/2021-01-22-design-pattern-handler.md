@@ -6,7 +6,7 @@ date:       2021-01-22
 author:     "ThreeJin"
 header-mask: 0.5
 catalog: true
-header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/design-handler-bg.jpg"
+header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/design-pattern-handler-bk.png"
 tags:
     - 设计模式
 
