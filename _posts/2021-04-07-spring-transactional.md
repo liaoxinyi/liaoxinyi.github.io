@@ -1,6 +1,6 @@
 ---
 layout:     post
-title:      "春天一样的长啥样？Spring-01"
+title:      "春天一样的代码长啥样？Spring-01"
 subtitle:   "Transactional注解"
 date:       2021-04-07
 author:     "ThreeJin"
@@ -59,3 +59,15 @@ readOnly：是否只读，默认是false
 rollbackFor：异常回滚列表，默认的是RuntimeException异常回滚  
 
 ##### tx:annotation-driven
+待补充
+
+##### 总结
+从上面的分析可以看到，Spring使用AOP实现事务的统一管理，为开发者提供了很大的便利。但是，有部分开发人员会误用这个便利，基本都是下面这两种情况：
+
+1.A类的a1方法没有标注@Transactional，a2方法标注@Transactional，在a1里面调用a2；
+
+2.将@Transactional注解标注在非public方法上。
+
+第一种为什么是错误用法，原因很简单，a1方法是目标类A的原生方法，调用a1的时候即直接进入目标类A进行调用，在目标类A里面只有a2的原生方法，在a1里调用a2，即直接执行a2的原生方法，并不通过创建代理对象进行调用，所以并不会进入TransactionInterceptor的invoke方法，不会开启事务。
+
+@Transactional的工作机制是基于AOP实现的，而AOP是使用动态代理实现的，动态代理要么是JDK方式、要么是Cglib方式。如果是JDK动态代理的方式，根据上面的分析可以知道，目标类的目标方法是在接口中定义的，也就是必须是public修饰的方法才可以被代理。如果是Cglib方式，代理类是目标类的子类，理论上可以代理public和protected方法，但是Spring在进行事务增强是否能够应用到当前目标类判断的时候，遍历的是目标类的public方法，所以Cglib方式也只对public方法有效。
