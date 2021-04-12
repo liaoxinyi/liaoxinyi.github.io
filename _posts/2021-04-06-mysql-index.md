@@ -6,7 +6,7 @@ date:       2021-04-06
 author:     "ThreeJin"
 header-mask: 0.5
 catalog: true
-header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/java-redis-bk.png"
+header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/java-mysql-bk-02.jpg"
 tags:
     - MySQL
 
@@ -89,9 +89,8 @@ InnoDB存储引擎中页的大小为16KB，一般表的主键类型为INT（占�
 在插入数据的时候，MySQL 首先会根据 name 进行排序，如果 name 一样，就根据联合索引中的 age 去排序，如果还一样，那么就会根据 主键 字段去排序
 
 此时每个数据页中的记录存放的实际是索引字段和主键字段，而其他字段是不存的，至于查找，原理和过程跟聚簇索引一样，假设现在执行这样的SQL：`SELECT name FROM student WHERE name='wx'`那么此时的查询是完美的，使用到了索引且不需要回表  
-#####聚簇索引和非聚簇索引
+##### 聚簇索引和非聚簇索引
 ![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/java-mysql-02-03.jpg)  
-
 聚簇索引是对磁盘上实际数据重新组织以按指定的一个或多个列的值排序的算法。特点是存储数据的顺序和索引顺序一致。一般情况下主键会默认创建聚簇索引，且一张表只允许存在一个聚簇索引（理由：数据一旦存储，顺序只能有一种）
 
 聚簇索引的叶子节点就是数据节点，而非聚簇索引的叶子节点仍然是索引节点，只不过有指向对应数据块的指针
@@ -102,11 +101,10 @@ InnoDB存储引擎中页的大小为16KB，一般表的主键类型为INT（占�
 ![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/java-mysql-02-04.jpg)  
 
 ##### 回表
-假如，现在索引只有name，age，id，而查询的 SQL 是这样子的：`SELECT * FROM student WHERE name='wx'`
-
+假如，现在索引只有name，age，id，而查询的 SQL 是这样子的：  
+`SELECT * FROM student WHERE name='wx'`  
 那这下子就完蛋了，因为你现在虽然根据 name 很快的定位到了该条记录，但是因为 name+age 不是聚簇索引，此时的 B+ 树的数据页中存放的仅仅是自己关联的索引和主键索引字段，并不会存其他的字段，所以这个时候其他的属性值是获取不到的，这时候该怎么办？这种情况下，MySQL 就需要进行回表查询了。  
-此时 MySQL 就会根据定位到的某条记录中的 id 再次进行聚簇索引查找，也就是说会根据 id 去维护 id 的那个 B+ 树中查找。因为聚簇索引中数据页记录的是一条记录的完整的记录，这个过程就叫回表
-
+此时 MySQL 就会根据定位到的某条记录中的 id 再次进行聚簇索引查找，也就是说会根据 id 去维护 id 的那个 B+ 树中查找。因为聚簇索引中数据页记录的是一条记录的完整的记录，这个过程就叫回表  
 回表的含义：**根据非主键索引查询到的结果并没有查找的字段值，此时就需要再次根据主键从聚簇索引的根节点开始查找，这样再次查找得到记录的过程叫回表**  
 
 **非主键索引一定会查询多次吗？**  
@@ -117,14 +115,15 @@ InnoDB存储引擎中页的大小为16KB，一般表的主键类型为INT（占�
 对于非主键索引（一般都是联合索引），在维护 B+ 树的时候，会根据联合索引的字段依次去判断，假设联合索引为：`name + address + age`，那么 MySQL 在维护该索引的 B+ 树的时候，首先会根据 name 进行排序，name 相同的话会根据第二个 address 排序，如果 address 也一样，那么就会根据 age 去排序，如果 age 也一样，那么就会根据主键字段值去排序  
 同时，对于非主键索引，MySQL 在维护 B+ 树的时候，仅仅是维护索引字段和主键字段，具体的值还是在聚簇索引之中  
 ##### 索引下推(Index Condition Pushdown)
-MySQL 5.6引入了索引下推优化，默认开启，使用`SET optimizer_switch = ‘index_condition_pushdown=off’`;可以将其关闭。官方文档中给的例子和解释如下： people表中（zipcode，lastname，firstname）构成一个索引  
-` WHERE zipcode=‘95054’ AND lastname LIKE ‘%etrunia%’ AND address LIKE ‘%Main Street%’;`  
+MySQL 5.6引入了索引下推优化，默认开启，使用`SET optimizer_switch = ‘index_condition_pushdown=off’`;可以将其关闭。  
+官方文档中给的例子和解释如下： people表中（zipcode，lastname，firstname）构成一个索引，然后此时有一个条件查询是这样的：  
+`WHERE zipcode=‘95054’ AND lastname LIKE ‘%etrunia%’ AND address LIKE ‘%Main Street%’;`    
 如果没有使用索引下推技术，则MySQL会通过`zipcode='95054’`从存储引擎中查询对应的数据，返回到MySQL服务端，然后MySQL服务端基于`lastname LIKE '%etrunia%'`和`address LIKE '%Main Street%'`来判断数据是否符合条件。 如果使用了索引下推技术，则MYSQL首先会返回符合`zipcode='95054’`的索引，然后根据`lastname LIKE '%etrunia%'`筛选出符合条件的索引后再返回到MySQL服务端  
 最后MySQL服务端基于`address LIKE '%Main Street%'`来判断数据是否符合条件。有了索引下推优化，可以在有like条件查询的情况下，减少回表次数
 ### 执行计划
 一条SQL语句的查询，可以有不同的执行方案，至于最终选择哪种方案，需要通过优化器进行选择，选择执行成本最低的方案。 在一条单表查询语句真正执行之前，MySQL的查询优化器会找出执行该语句所有可能使用的方案，对比之后找出成本最低的方案。这个成本最低的方案就是所谓的执行计划  
-- 优化过程大致如下：  
-    - 根据搜索条件，找出所有可能使用的索引  
-    - 计算全表扫描的代价  
-    - 计算使用不同索引执行查询的代价  
-    - 对比各种执行方案的代价，找出成本最低的那一个
+优化过程大致如下：
+- 根据搜索条件，找出所有可能使用的索引  
+- 计算全表扫描的代价  
+- 计算使用不同索引执行查询的代价  
+- 对比各种执行方案的代价，找出成本最低的那一个
