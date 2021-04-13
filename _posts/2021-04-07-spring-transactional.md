@@ -6,7 +6,7 @@ date:       2021-04-07
 author:     "ThreeJin"
 header-mask: 0.5
 catalog: true
-header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/java-redis-bk.png"
+header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/java-spring-bk-01.jpg"
 tags:
     - MySQL
 

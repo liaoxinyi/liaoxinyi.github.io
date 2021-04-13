@@ -207,39 +207,250 @@ Kafka 的消息分为两层：消息集合 和 消息。一个消息集合中包
 ![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/kafka09.jpg)  
 <center>消费者的offset示意图</center>  
 这是某一个分区的offset情况，我们已经知道生产者写入的offset是最新最大的值也就是12，而当Consumer A进行消费时，他从0开始消费，一直消费到了9，它的offset就记录在了9，再比如Consumer B就纪录在了11。等下一次他们再来消费时，他们可以选择接着上一次的位置消费，当然也可以选择从头消费，或者跳到最近的记录并从“现在”开始消费。  
-- **总的说明**
-
+- **总的说明**  
 ![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/kafka10.jpg)  
-
-1. 每个分区是由多个Segment组成，当Kafka要写数据到一个partition时，它会写入到状态为active的segment中。如果该segment被写满，则一个新的segment将会被新建，然后变成新的“active” segment  
-2. 偏移量：分区中的每一条消息都会被分配的一个连续的id值，该值用于唯一标识分区中的每一条消息  
-3. 每个segment中则保存了真实的消息数据。每个Segment对应于一个索引文件与一个日志文件。segment文件的生命周期是由Kafka Server的配置参数所决定的。比如说，server.properties文件中的参数项log.retention.hours=168就表示7天后删除老的消息文件  
-4. 每个segment有以下3种数据文件：
-    - **00000000000000000000.index**：基于偏移量的索引文件，存放着消息的offset和其对应的物理位置，是稀松索引,稀松索引可以加快速度，因为 index 不是为每条消息都存一条索引信息，而是每隔几条数据才存一条 index 信息，这样 index 文件其实很小。kafka在写入日志文件的时候，同时会写索引文件（.index和.timeindex）。默认情况下，有个参数`log.index.interval.bytes`限定了在日志文件写入多少数据，就要在索引文件写一条索引，默认是4KB，写4kb的数据然后在索引里写一条索引  
-    - **00000000000000000000.log**：它是segment文件的数据文件，用于存储实际的消息。该文件是二进制格式的。log文件是存储在 `ConcurrentSkipListMap` 里的，是一个map结构，**key是文件名（offset）**，value是内容，这样在查找指定偏移量的消息时，用二分查找法就能快速定位到消息所在的数据文件和索引文件  
-    - **00000000000000000000.timeindex**：基于时间戳的索引文件  
-    - 命名规则：partition全局的第一个segment从0开始，**后续每个segment文件名为上一个segment文件最后一条消息的offset值**。没有数字则用0填充  
-5. 新数据加在文件的末尾(调用内部方法)，不论文件多大，该操作的时间复杂度都是O(1)，但是在查找某个 offset 的时候，是顺序查找，如果文件很大的话，查找的效率就会很低  
-6. **通过二分查找文件列表，快速定位到具体的segment文件，再以对应的.index作为索引在.log中查找具体的消息**  
-消费者在每次调用poll() 方法进行定时轮询的时候，会返回由生产者写入 Kafka 但是还没有被消费者消费的记录，因此可以追踪到哪些记录是被群组里的哪个消费者读取的。消费者可以使用 Kafka 来追踪消息在分区中的位置（偏移量）  
-消费者会向一个叫做 `_consumer_offset` 的特殊主题中发送消息，这个主题会保存每次所发送消息中的分区偏移量，**这个主题的主要作用就是消费者触发重平衡后记录偏移使用的**，消费者每次向这个主题发送消息，正常情况下不触发重平衡，这个主题是不起作用的，当触发重平衡后，消费者停止工作，每个消费者可能会分到对应的分区，这个主题就是让消费者能够继续处理消息所设置的  
+    - 每个分区是由多个Segment组成，当Kafka要写数据到一个partition时，它会写入到状态为active的segment中。如果该segment被写满，则一个新的segment将会被新建，然后变成新的“active” segment  
+    - **偏移量**：分区中的每一条消息都会被分配的一个连续的id值，该值用于唯一标识分区中的每一条消息  
+    - 每个segment中则保存了真实的消息数据。每个Segment对应于一个索引文件与一个日志文件。segment文件的生命周期是由Kafka Server的配置参数所决定的。比如说，server.properties文件中的参数项log.retention.hours=168就表示7天后删除老的消息文件  
+    - 每个segment有以下3种数据文件：
+        1. **00000000000000000000.index**：基于偏移量的索引文件，存放着消息的offset和其对应的物理位置，是稀松索引,稀松索引可以加快速度，因为 index 不是为每条消息都存一条索引信息，而是每隔几条数据才存一条 index 信息，这样 index 文件其实很小。kafka在写入日志文件的时候，同时会写索引文件（.index和.timeindex）。默认情况下，有个参数`log.index.interval.bytes`限定了在日志文件写入多少数据，就要在索引文件写一条索引，默认是4KB，写4kb的数据然后在索引里写一条索引  
+        2. **00000000000000000000.log**：它是segment文件的数据文件，用于存储实际的消息。该文件是二进制格式的。log文件是存储在 `ConcurrentSkipListMap` 里的，是一个map结构，**key是文件名（offset）**，value是内容，这样在查找指定偏移量的消息时，用二分查找法就能快速定位到消息所在的数据文件和索引文件  
+        3. **00000000000000000000.timeindex**：基于时间戳的索引文件  
+        4. 命名规则：partition全局的第一个segment从0开始，**后续每个segment文件名为上一个segment文件最后一条消息的offset值**。没有数字则用0填充  
+    - 新数据加在文件的末尾(调用内部方法)，不论文件多大，该操作的时间复杂度都是O(1)，但是在查找某个 offset 的时候，是顺序查找，如果文件很大的话，查找的效率就会很低  
+    - **通过二分查找文件列表，快速定位到具体的segment文件，再以对应的.index作为索引在.log中查找具体的消息**  
+    - `poll()方法`：消费者在每次调用该方法进行定时轮询的时候，会返回由生产者写入 Kafka 但是还没有被消费者消费的记录，因此可以追踪到哪些记录是被群组里的哪个消费者读取的。消费者可以使用 Kafka 来追踪消息在分区中的位置（偏移量）  
+    - `重平衡提交`：消费者会向一个叫做 `_consumer_offset` 的特殊主题中发送消息，这个主题会保存每次所发送消息中的分区偏移量，**这个主题的主要作用就是消费者触发重平衡后记录偏移使用的**，消费者每次向这个主题发送消息，**正常情况下不触发重平衡，这个主题是不起作用的**，当触发重平衡后，消费者停止工作，每个消费者可能会分到对应的分区，这个主题就是让消费者能够继续处理消息所设置的  
 - **消息丢失和重复消费**  
-    - `重复消费：提交偏移量<处理的最后偏移`    
+    - `重复消费：提交偏移量<消费者实际处理的最后一个消息的偏移量`    
         ![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/kafka07.jpg)   
         <center>重复消费示意图</center>  
-    - `消息丢失：提交偏移量>处理的最后偏移`    
+    - `消息丢失：提交偏移量>消费者实际处理的最后一个消息的偏移量`    
+        ![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/kafka11.jpg)   
+        <center>消息丢失示意图</center>  
 ##### 提交方式  
 - 自动提交  
 最简单的方式就是让消费者自动提交偏移量。如果 `enable.auto.commit` 被设置为true，那么每过 5s，消费者会自动把从 poll() 方法轮询到的最大偏移量提交上去。提交时间间隔由 `auto.commit.interval.ms` 控制，默认是 5s。与消费者里的其他东西一样，自动提交也是在轮询中进行的。消费者在每次轮询中会检查是否提交该偏移量了，如果是，那么就会提交从上一次轮询中返回的偏移量。
 - 手动同步提交  
-可以让应用程序决定何时提交偏移量。使用 `commitSync()` 提交偏移量。这个 API 会提交由 poll() 方法返回的最新偏移量，提交成功后马上返回，如果提交失败就抛出异常。commitSync() 将会提交由 poll() 返回的最新偏移量，如果处理完所有记录后要确保调用了 commitSync()，否则还是会有丢失消息的风险，如果发生了重平衡，从最近一批消息到发生在重平衡之间的所有消息都将被重复处理。  
+    - 可以让应用程序决定何时提交偏移量。使用 `commitSync()` 提交偏移量。这个 API 会提交由 poll() 方法返回的最新偏移量，提交成功后马上返回，如果提交失败就抛出异常  
+    - 只要没有发生不可恢复的错误，commitSync（）方法会阻塞，会一直尝试直至提交成功，如果失败，也只能记录异常日志  
+    - commitSync() 将会提交由 poll() 返回的最新偏移量，如果处理完所有记录后要确保调用了 commitSync()，否则还是会有丢失消息的风险。但是，同步提交有重复消费的风险，如果发生了重平衡，从最近一批消息到发生在重平衡之间的所有消息都将被重复处理  
+```java
+package org.example.commit;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.example.config.BusiConst;
+
+import java.time.Duration;
+import java.util.Collections;
+import java.util.Properties;
+
+/**
+ *手动提交偏移量，生产者使用同步发送
+ **/
+public class CommitSyncConsumer {
+    public static void main(String[] args) {
+        Properties properties = new Properties();
+        properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "192.168.42.111:9092");
+        properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        properties.put(ConsumerConfig.GROUP_ID_CONFIG, "CommitSync");
+        //取消自动提交
+        properties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
+        KafkaConsumer<String, String> consumer = new KafkaConsumer<String, String>(properties);
+        try {
+            consumer.subscribe(Collections.singletonList(BusiConst.CONSUMER_COMMIT_TOPIC));
+            while (true) {
+                ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(500));
+                for (ConsumerRecord<String, String> record : records) {
+                    System.out.println("主题：" + record.topic() + ";分区：" + record.partition() +
+                            ";偏移量：" + record.offset() +";key:" + record.key() + ";value:" + record.value());
+                    //do your work
+                }
+                //同步提交（这个方法会阻塞）
+                consumer.commitSync();
+            }
+        } finally {
+            consumer.close();
+        }
+    }
+}
+```    
+
 - 手动异步提交  
-异步提交 `commitAsync()` 与同步提交 `commitSync()` 最大的区别在于异步提交不会进行重试，同步提交会一直进行重试。  
-**commitAsync() 也支持回调**，在 broker 作出响应时会执行回调。回调经常被用于记录提交错误或生成度量指标。如果要用它来进行重试，则一定要注意提交的顺序（可使用一个单调递增的序列号维护异步提交顺序）  
+    - 异步提交 `commitAsync()` 与同步提交 `commitSync()` 最大的区别在于异步提交不会进行重试，同步提交会一直进行重试：之所以不进行重试,是因为在它收到服务器响应的时候, 可能有一个更大的偏移量已经提交成功。如果此时再重试提交，且提交后就发生了重平衡，那么就会出现重复消息  
+    - **commitAsync()支持回调`OffsetCommitCallback()函数`**，在 broker 作出响应时会执行回调。回调经常被用于记录提交错误或生成度量指标。如果要用它来进行重试，则一定要注意提交的顺序（可使用一个单调递增的序列号维护异步提交顺序）  
+```java
+package org.example.commit;
+
+import org.apache.kafka.clients.consumer.*;
+import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.example.config.BusiConst;
+
+import java.time.Duration;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Properties;
+
+/**
+ *异步手动提交偏移量，生产者使用同步发送
+ **/
+public class CommitAsyncConsumer {
+    public static void main(String[] args) {
+        Properties properties = new Properties();
+        properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "192.168.42.111:9092");
+        properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        properties.put(ConsumerConfig.GROUP_ID_CONFIG, "CommitAsync");
+        //取消自动提交
+        properties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
+        KafkaConsumer<String, String> consumer = new KafkaConsumer<String, String>(properties);
+        try {
+            consumer.subscribe(Collections.singletonList(BusiConst.CONSUMER_COMMIT_TOPIC));
+            while (true) {
+                ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(500));
+                for (ConsumerRecord<String, String> record : records) {
+                    System.out.println("主题：" + record.topic() + ";分区：" + record.partition() +
+                            ";偏移量：" + record.offset() +";key:" + record.key() + ";value:" + record.value());
+                    //do your work
+                }
+                //异步提交
+                consumer.commitAsync();
+                //允许执行回调，对提交失败的消息进行处理
+                consumer.commitAsync(new OffsetCommitCallback() {
+                    @Override
+                    public void onComplete(Map<TopicPartition, OffsetAndMetadata> map, Exception e) {
+                        if (e != null) {
+                            System.out.println("Commit failed for offsets");
+                            System.out.println(map);
+                            e.printStackTrace();
+                        }
+                    }
+                });
+            }
+        } finally {
+            consumer.close();
+        }
+    }
+}
+```
 - 同步和异步组合提交  
 一般情况下，针对偶尔出现的提交失败，不进行重试不会有太大的问题，因为如果提交失败是因为临时问题导致的，那么后续的提交总会有成功的。但是如果在关闭消费者或再均衡前的最后一次提交，就要确保提交成功。**因此，在消费者关闭之前一般会组合使用commitAsync和commitSync提交偏移量。**  
+```java
+package org.example.commit;
+
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.example.config.BusiConst;
+
+import java.time.Duration;
+import java.util.Collections;
+import java.util.Properties;
+
+/**
+ *同步和异步组合
+ **/
+public class SyncAndAsync {
+    public static void main(String[] args) {
+        Properties properties = new Properties();
+        properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "192.168.42.111:9092");
+        properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        properties.put(ConsumerConfig.GROUP_ID_CONFIG, "SyncAndAsync");
+        //取消自动提交
+        properties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
+        KafkaConsumer<String, String> consumer = new KafkaConsumer<String, String>(properties);
+
+        try {
+            consumer.subscribe(Collections.singletonList(BusiConst.CONSUMER_COMMIT_TOPIC));
+            while (true) {
+                ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(500));
+                for (ConsumerRecord<String, String> record : records) {
+                    System.out.println("主题：" + record.topic() + ";分区：" + record.partition() +
+                            ";偏移量：" + record.offset() +";key:" + record.key() + ";value:" + record.value());
+                    //do your work
+                }
+                //异步提交
+                consumer.commitAsync();
+            }
+        } catch (Exception e) {
+            System.out.println("Commit failed");
+            e.printStackTrace();
+        } finally {
+            try {
+                //同步提交
+                consumer.commitSync();
+            } finally {
+                consumer.close();
+            }
+        }
+    }
+}
+```
+
 - 提交特定的偏移量  
 一般提交偏移量的频率和处理消息批次的频率是一样的。如果 poll() 方法返回一大批数据，为了避免再均衡引发的重复处理整批消息，消费者 API 允许调用 commitSync() 和 commitAsync() 方法时传入希望提交的分区和偏移量的 map。不过因为消费者可能不只读取一个分区，你需要跟踪所有分区的偏移量，所以特定偏移量的提交会使得代码更加复杂  
+
+```java
+package org.example.commit;
+
+import org.apache.kafka.clients.consumer.*;
+import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.example.config.BusiConst;
+
+import java.time.Duration;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+
+/**
+ *特定提交
+ **/
+public class CommitSpecial {
+    public static void main(String[] args) {
+        Properties properties = new Properties();
+        properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "192.168.42.111:9092");
+        properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        properties.put(ConsumerConfig.GROUP_ID_CONFIG, "CommitSpecial");
+        //取消自动提交
+        properties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
+        KafkaConsumer<String, String> consumer = new KafkaConsumer<String, String>(properties);
+        Map<TopicPartition, OffsetAndMetadata> currOffsets = new HashMap<>();
+        int count = 0;
+        try {
+            consumer.subscribe(Collections.singletonList(BusiConst.CONSUMER_COMMIT_TOPIC));
+            while (true) {
+                ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(500));
+                for (ConsumerRecord<String, String> record : records) {
+                    System.out.println("主题：" + record.topic() + ";分区：" + record.partition() +
+                            ";偏移量：" + record.offset() +";key:" + record.key() + ";value:" + record.value());
+                    //do your work
+                    currOffsets.put(new TopicPartition(record.topic(), record.partition()),
+                            new OffsetAndMetadata(record.offset() + 1, "no meta"));
+                    if (count % 11 == 0) {
+                        consumer.commitAsync(currOffsets,null);
+                    }
+                    count++;
+                }
+            }
+        } finally {
+            consumer.commitSync();
+            consumer.close();
+        }
+    }
+}
+
+```
 
 说白了，问题的关键还是在于怎么处理好再平衡时的偏移量提交问题：  
 因此在为消费者分配新分区或移除分区时，可以通过消费者 API 执行一些代码：在调用 ` KafkaConsumer#subscribe()` 方法（这个方法强制要求你为消费者设置一个消费者组（也就是`group.id`参数），随后就不需要处理分区的分配问题了。）时传入一个 `ConsumerRebalanceListener` 实例。`ConsumerRebalanceListener` 有两个需要实现的方法：  
