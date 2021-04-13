@@ -71,45 +71,26 @@ kafka已成为大数据的重要组件，与zookeeper等组件配合，在大数
 
 ##### 角色说明
 ![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/kafka03.jpg)  
-
-- 特征  
-1. kafka支持消息持久化
-
-2. **消费端是主动拉取数据，消费状态和订阅关系由客户端负责维护**
-
-3. 消息消费完后，不会立即删除，会保留历史消息。因此支持多订阅时，消息只会存储一份就可以
-
-4. topic中所有的分区的消费顺序是随机的但是，在单个分区内的消费顺序是固定的
+<center>kafka的角色示意图</center>
 
 - 角色说明  
-1. **broker**：kafka集群中包含一个或者多个服务实例（节点），这种服务实例被称为broker（一个broker就是一个节点/一个服务器）
-
-2. **topic**：每条发布到kafka集群的消息都属于某个类别，这个类别就叫做topic
-
-3. **partition**:
-
-partition是一个物理上的概念，每个topic包含一个或者多个partition，发布者发到某个topic的消息会根据指定的规则被均匀的分布到其下的多个partition  
-一个broker服务下，可以创建多个分区，broker数与分区数没有关系  
-在kafka中，每一个分区会有一个编号：编号从0开始  
-每一个分区内的数据是有序的，但全局的数据不能保证是有序的。（有序是指生产什么样顺序，消费时也是什么样的顺序）  
-
-4. **segment**：一个partition当中存在多个segment文件段，每个segment分为两部分`.log`文件和`.index`文件
-
-5. **producer**：消息的生产者，负责发布消息到kafka的broker中
-
-6. **consumer**：消息的消费者，向kafka的broker中读取消息的客户端
-
-7. **consumergroup**：
-
-消费者组，每一个consumer属于一个特定的consumergroup（可以为每个consumer指定groupName）,**同一个组中的消费者对于同一条消息只消费一次**
-
-每个消费者组都有一个ID，即group ID。组内的所有消费者协调在一起来消费一个订阅主题( topic)的所有分区(partition)
-
-**每个分区只能由同一个消费组内的一个消费者(consumer)来消费，但每个分区是可以由不同的消费组同时来消费的**
-
-8. **.log**：存放生产者发送的数据文件
-
+1. **broker**：kafka集群中包含一个或者多个服务实例（节点），这种服务实例被称为broker（一个broker就是一个节点/一个服务器）  
+2. **topic**：每条发布到kafka集群的消息都属于某个类别，这个类别就叫做topic  
+3. **partition**:partition是一个物理上的概念，每个topic包含一个或者多个partition，发布者发到某个topic的消息会根据指定的规则被均匀的分布到其下的多个partition。一个broker服务下，可以创建多个分区，broker数与分区数没有关系。在kafka中，每一个分区会有一个编号：编号从0开始。每一个分区内的数据是有序的，但全局的数据不能保证是有序的。（有序是指生产什么样顺序，消费时也是什么样的顺序）  
+4. **segment**：一个partition当中存在多个segment文件段，每个segment分为两部分`.log`文件和`.index`文件  
+5. **producer**：消息的生产者，负责发布消息到kafka的broker中  
+6. **consumer**：消息的消费者，向kafka的broker中读取消息的客户端  
+7. **consumergroup**：消费者组，每一个consumer属于一个特定的consumergroup（每个消费者组都有一个ID，即group ID，可以为每个consumer指定group ID）,**同一个组中的消费者对于同一条消息只消费一次，组内的所有消费者协调在一起来消费一个订阅主题( topic)的所有分区(partition)，`每个分区只能由同一个消费组内的一个消费者(consumer)来消费，但每个分区是可以由不同的消费组同时来消费的`**  
+8. **.log**：存放生产者发送的数据文件  
 9. **.index**：存放`.log`文件的数据索引值，用于加快数据的查询速度
+
+具体的详细角色内容介绍，可以参考下一篇内容:[就决定是你了，Kafka-02](https://www.threejinqiqi.fun/2021/01/13/java-message-kafka/)  
+
+- 特征  
+1. kafka支持消息持久化  
+2. 消费端是主动拉取数据，消费状态和订阅关系由客户端负责维护  
+3. **消息消费完后，不会立即删除，会保留历史消息**  
+4. **topic中所有的分区的消费顺序是随机的但是，在单个分区内的消费顺序是固定的**
 
 ##### 角色理解
 ![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/kafka01.jpg)  
