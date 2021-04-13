@@ -94,7 +94,7 @@ kafka已成为大数据的重要组件，与zookeeper等组件配合，在大数
 
 ##### 角色理解
 ![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/kafka01.jpg)  
-
+<center>kafka的角色示意</center>  
 以topic+分区进行组织，每一个topic可以创建多个分区，每一个分区包含单独的文件夹，并且是多副本机制，即topic的每一个分区会有Leader与Follower，并且Kafka内部有机制保证topic的某一个分区的Leader与follow不会存在在同一台机器，并且每一台broker会尽量均衡的承担各个分区的Leader，当然在运行过程中如果不均衡，可以执行命令进行手动重平衡。Leader节点承担一个分区的读写，follow节点只负责数据备份。
 
 - **Leader与Follower**  
@@ -125,25 +125,18 @@ kafka已成为大数据的重要组件，与zookeeper等组件配合，在大数
 
 ##### 消息写入时发生了什么？
 - 正常过程  
-1. kafka以topic来进行消息管理，每个topic包含多个partition，每个partition对应一个逻辑log，由多个segment组成
-
-2. 每个segment中存储多条消息，消息id由其逻辑位置决定，即从消息id可直接定位到消息的存储位置，避免id到位置的额外映射
-
-![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/kafka02.jpg) 
-
-3. 每个part在内存中对应一个index，记录每个segment中的第一条消息偏移
-
-4. 发布者发到某个topic的消息会被均匀的分布到多个partition上（或根据用户指定的路由规则进行分布），broker收到发布消息后会往对应partition的最后一个segment上添加该消息，当某个segment上的消息条数达到配置值或消息发布时间超过阈值时，segment上的消息会被flush到磁盘，只有flush到磁盘上的消息订阅者才能订阅到，segment达到一定的大小后将不会再往该segment写数据，broker会创建新的segment
-
+    - kafka以topic来进行消息管理，每个topic包含多个partition，每个partition对应一个逻辑log，由多个segment组成  
+    - 每个segment中存储多条消息，消息id由其逻辑位置决定，即从消息id可直接定位到消息的存储位置，避免id到位置的额外映射  
+    ![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/kafka02.jpg)  
+    <center>segment中的大致内容示意</center>  
+    - 每个part在内存中对应一个index，记录每个segment中的第一条消息偏移  
+    - 发布者发到某个topic的消息会被均匀的分布到多个partition上（或根据用户指定的路由规则进行分布），broker收到发布消息后会往对应partition的最后一个segment上添加该消息，当某个segment上的消息条数达到配置值或消息发布时间超过阈值时，segment上的消息会被flush到磁盘，只有flush到磁盘上的消息订阅者才能订阅到，segment达到一定的大小后将不会再往该segment写数据，broker会创建新的segment  
 - 负载均衡  
-1. producer可以自定义发送到哪个partition的路由规则。默认路由规则：hash(key)%numPartitions，如果key为null则随机选择一个partition
-
-2. 自定义路由：如果key是一个user id，可以把同一个user的消息发送到同一个partition，这时consumer就可以从同一个partition读取同一个user的消息
-
+    - producer可以自定义发送到哪个partition的路由规则。默认路由规则：hash(key)%numPartitions，如果key为null则随机选择一个partition  
+    - 自定义路由：如果key是一个user id，可以把同一个user的消息发送到同一个partition，这时consumer就可以从同一个partition读取同一个user的消息
 ##### Kafka 为何如此之快？
-Kafka 实现了零拷贝原理来快速移动数据，避免了内核之间的切换。Kafka 可以将数据记录分批发送，从生产者到文件系统（Kafka 主题日志）到消费者，可以端到端的查看这些批次的数据。  
-批处理能够进行更有效的数据压缩并减少 I/O 延迟，Kafka **采取顺序写入磁盘的方式，避免了随机磁盘寻址的浪费**  
-总结起来就是：**顺序读写、零拷贝、消息压缩、分批发送**
+Kafka 实现了零拷贝原理来快速移动数据，避免了内核之间的切换。Kafka 可以将数据记录分批发送，从生产者到文件系统（Kafka 主题日志）到消费者，可以端到端的查看这些批次的数据。批处理能够进行更有效的数据压缩并减少 I/O 延迟，Kafka **采取顺序写入磁盘的方式，避免了随机磁盘寻址的浪费**  
+总结起来就是：**`顺序读写、零拷贝、消息压缩、分批发送`**
 
 ### 实战-消费者  
 理论是认识一个技术的基础，实战才是硬道理，这里以SpringBoot继承kafka为例  

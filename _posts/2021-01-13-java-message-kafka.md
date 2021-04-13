@@ -1,7 +1,7 @@
 ---
 layout:     post
 title:      "就决定是你了，Kafka-02"
-subtitle:   "生产者的深入、分区策略、Kafka压缩、消费者的深入、消息不丢失"
+subtitle:   "生产者的深入、分区策略、Kafka压缩、消费者的深入、偏移量、提交、如何保证消息不丢失"
 date:       2021-01-13
 author:     "ThreeJin"
 header-mask: 0.5
@@ -139,6 +139,7 @@ producer.close();
 有开启自然有关闭：  
 - producer.close()：优先把消息处理完毕，优雅退出  
 - producer.close(timeout): 超时时，强制关闭
+
 ### 生产者分区策略
 Kafka 对于数据的读写是以分区为粒度的，分区可以分布在多个主机（Broker）中，这样每个节点能够实现独立的数据写入和读取，并且能够通过增加新的节点来增加 Kafka 集群的吞吐量，通过分区部署在多个 Broker 来实现负载均衡的效果  
 **这里有一点需要注意：比如已有X个分区了，而且历史消息也已经储存完毕，此时新增分区，只有新消息才会到新的分区，历史消息还是保持不动了**，这里就涉及到一个问题，如果历史有大量的历史消息需要被处理的时候，其实调大分区数量是无效的，同时增加服务节点也不行，因为kafka允许同组的多个分区被一个consumer消费，但是不允许一个分区被不同组的多个consumer消费，即**一个partition在同一个时刻只有一个consumer instance在消费**
@@ -178,7 +179,8 @@ Kafka 的消息分为两层：消息集合 和 消息。一个消息集合中包
 
 ##### 怎么玩？
 - Producer先压缩：`properties.put("compression.type", "gzip");`（使用GZIP的算法进行压缩）  
-- Consumer再解压缩：因为采用的何种压缩算法是随着 key、value 一起发送过去的，所以消费者知道采用何种压缩算法   
+- Consumer再解压缩：因为采用的何种压缩算法是随着 key、value 一起发送过去的，所以消费者知道采用何种压缩算法
+
 ### 消费者的那些事儿
 ##### 水平扩展提升消费能力
 因为Kafka 消费者从属于消费者群组。一个群组中的消费者订阅的都是相同的主题，每个消费者接收主题一部分分区的消息，**一个partition在同一个时刻只有一个consumer instance在消费**，而且一般来说，消费者的个数都会建议和生产者的分区个数相同，这样既不会有消费不过来的消费者，也不会有空闲的消费者。  
@@ -211,7 +213,7 @@ Kafka 的消息分为两层：消息集合 和 消息。一个消息集合中包
 ![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/kafka10.jpg)  
     - 每个分区是由多个Segment组成，当Kafka要写数据到一个partition时，它会写入到状态为active的segment中。如果该segment被写满，则一个新的segment将会被新建，然后变成新的“active” segment  
     - **偏移量**：分区中的每一条消息都会被分配的一个连续的id值，该值用于唯一标识分区中的每一条消息  
-    - 每个segment中则保存了真实的消息数据。每个Segment对应于一个索引文件与一个日志文件。segment文件的生命周期是由Kafka Server的配置参数所决定的。比如说，server.properties文件中的参数项log.retention.hours=168就表示7天后删除老的消息文件  
+    - 每个segment中则保存了真实的消息数据。每个Segment对应于一个索引文件与一个日志文件。segment文件的生命周期是由Kafka Server的配置参数所决定的。比如说，server.properties文件中的参数项`log.retention.hours=168`就表示7天后删除老的消息文件  
     - 每个segment有以下3种数据文件：
         1. **00000000000000000000.index**：基于偏移量的索引文件，存放着消息的offset和其对应的物理位置，是稀松索引,稀松索引可以加快速度，因为 index 不是为每条消息都存一条索引信息，而是每隔几条数据才存一条 index 信息，这样 index 文件其实很小。kafka在写入日志文件的时候，同时会写索引文件（.index和.timeindex）。默认情况下，有个参数`log.index.interval.bytes`限定了在日志文件写入多少数据，就要在索引文件写一条索引，默认是4KB，写4kb的数据然后在索引里写一条索引  
         2. **00000000000000000000.log**：它是segment文件的数据文件，用于存储实际的消息。该文件是二进制格式的。log文件是存储在 `ConcurrentSkipListMap` 里的，是一个map结构，**key是文件名（offset）**，value是内容，这样在查找指定偏移量的消息时，用二分查找法就能快速定位到消息所在的数据文件和索引文件  
@@ -235,6 +237,7 @@ Kafka 的消息分为两层：消息集合 和 消息。一个消息集合中包
     - 可以让应用程序决定何时提交偏移量。使用 `commitSync()` 提交偏移量。这个 API 会提交由 poll() 方法返回的最新偏移量，提交成功后马上返回，如果提交失败就抛出异常  
     - 只要没有发生不可恢复的错误，commitSync（）方法会阻塞，会一直尝试直至提交成功，如果失败，也只能记录异常日志  
     - commitSync() 将会提交由 poll() 返回的最新偏移量，如果处理完所有记录后要确保调用了 commitSync()，否则还是会有丢失消息的风险。但是，同步提交有重复消费的风险，如果发生了重平衡，从最近一批消息到发生在重平衡之间的所有消息都将被重复处理  
+    
 ```java
 package org.example.commit;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -282,7 +285,8 @@ public class CommitSyncConsumer {
 
 - 手动异步提交  
     - 异步提交 `commitAsync()` 与同步提交 `commitSync()` 最大的区别在于异步提交不会进行重试，同步提交会一直进行重试：之所以不进行重试,是因为在它收到服务器响应的时候, 可能有一个更大的偏移量已经提交成功。如果此时再重试提交，且提交后就发生了重平衡，那么就会出现重复消息  
-    - **commitAsync()支持回调`OffsetCommitCallback()函数`**，在 broker 作出响应时会执行回调。回调经常被用于记录提交错误或生成度量指标。如果要用它来进行重试，则一定要注意提交的顺序（可使用一个单调递增的序列号维护异步提交顺序）  
+    - **commitAsync()支持回调`OffsetCommitCallback()函数`**，在 broker 作出响应时会执行回调。回调经常被用于记录提交错误或生成度量指标。如果要用它来进行重试，则一定要注意提交的顺序（可使用一个单调递增的序列号维护异步提交顺序）
+
 ```java
 package org.example.commit;
 
