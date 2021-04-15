@@ -8,7 +8,8 @@ header-mask: 0.5
 catalog: true
 header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/java-spring-bk-01.jpg"
 tags:
-    - MySQL
+    - Spring
+    - Java
 
 ---
 > 资料来源于网络上各位前辈（wind瑞_等）

@@ -1,7 +1,7 @@
 ---
 layout:     post
 title:      "这只兔子该怎么玩儿？"
-subtitle:   "RabbitMQ的基础知识和基本使用"
+subtitle:   "消息队列协议介绍、MQ的对比、RabbitMQ的基础知识、SpringBoot集成生产者/消费者"
 date:       2020-11-11
 author:     "ThreeJin"
 header-mask: 0.5
@@ -15,12 +15,52 @@ tags:
 
 ### 前言
 之前在线上环境中遇到消息堆积的问题，排查出来原因是消费者抛异常导致AKS未反馈。当时遇到这个问题的时候，才想起来，其实还没有真正梳理一下有关RabbitMQ的一些东西，所以一直计划着写这一篇文章。后面遇到有关的问题，也会持续在这篇文章基础上进行更新  
-### 基本介绍
-##### 消息中间件
+### 常见可实现消息队列的协议
+##### 为什么需要消息中间件？ 
 依旧是老样子，一个产品的产生必定是为了解决某一个场景问题。对于一个大型的软件系统来说，它会有很多的组件或者说模块或者说子系统或者（subsystem or Component or submodule）。那么这些模块的如何通信？这和传统的IPC有很大的区别。传统的IPC很多都是在单一系统上的，模块耦合性很大，不适合扩展（Scalability）；如果使用socket那么不同的模块的确可以部署到不同的机器上，但是还是有很多问题需要解决。比如信息的发送者和接收者如何维持这个连接，如果一方的连接中断，这期间的数据如何方式丢失？如何降低发送者和接收者的耦合度？如何做到load balance？有效均衡接收者的负载？等等  
 消息中间件最主要的作用是解耦，中间件最标准的用法是生产者生产消息传送到队列，消费者从队列中拿取消息并处理，生产者不用关心是谁来消费，消费者不用关心谁在生产消息，从而达到解耦的目的。在分布式的系统中，消息队列也会被用在很多其它的方面，比如：分布式事务的支持，RPC的调用等等  
+总结如下：  
+- **消息队列的主要应用场景：解耦、消峰、广播、最终一致性**  
+- **点对点消息的主要应用场景：数据架空存储、点对点数据传输**
+
 ##### AMQP(Advanced Message Queuing Protocol)
-虽然同步消息通讯有很多公开标准，如 COBAR的 IIOP ，或者是 SOAP 等。但是在异步消息处理中却不是这样，只有大企业有一些商业实现（如微软的 MSMQ ，IBM 的 Websphere MQ 等），因此，在 2006 年的 6 月，Cisco 、Redhat、iMatix 等联合制定了 AMQP 的公开标准。AMQP，即Advanced Message Queuing Protocol，高级消息队列协议，是应用层协议的一个开放标准，为面向消息的中间件设计，基于此协议的客户端与消息中间件可传递消息，并不受产品、开发语言等条件的限制。消息中间件主要用于组件之间的解耦，消息的发送者无需知道消息使用者的存在，反之亦然。AMQP的主要特征是面向消息、队列、路由（包括点对点和发布/订阅）、可靠性、安全  
+一个提供统一消息服务的应用层标准高级消息队列协议，也是rmq采用的协议
+##### MQTT(Message Queuing Telemetry Transport)
+是一种基于发布/订阅范式的“轻量级”消息协议，由 IBM 发布  
+- MQTT 可以被解释为一种低开销，低带宽占用的即时通讯协议，可以用极少的代码和带宽的为连接远程设备提供实时可靠的消息服务，它适用于硬件性能低下的远程设备以及网络状况糟糕的环境下，因此 MQTT 协议在 IoT（Internet of things，物联网），小型设备应用，移动应用等方面有较广泛的应用  
+- IoT 设备要运作，就必须连接到互联网，设备才能相互协作，以及与后端服务协同工作。而互联网的基础网络协议是 TCP/IP，MQTT 协议是基于 TCP/IP 协议栈而构建的，因此它已经慢慢的已经成为了 IoT 通讯的标准
+
+##### XMPP(eXtensible Messageing and Presence Protocol)
+可扩展通讯和表示协议 (XMPP) 可用于服务类实时通讯、表示和需求响应服务中的XML 数据元流式传输。XMPP 以 Jabber 协议为基础，而 Jabber 是 IM 应用中常用的开放式协议
+##### JMS(Java Message Service)
+ Java 消息服务(Java Message Service)应用程序接口是一个 Java 平台中关于面向消息中间件(MOM)的 API，用于在两个应用程序之间，或分布式系统中发送消息，进行异步通信。Java 消息服务是一个与具体平台无关的 API，绝大多数MOM 提供商都对 JMS 提供支持
+##### STOMP(Streaming Text Orientated Message Protocol)
+提供了一个可互操作的连接格式，允许 STOMP 客户端与任意 STOMP 消息代理（Broker）进行交互。STOMP 协议由于设计简单，易于开发客户端，因此在多种语言和多种平台上得到广泛地应用
+##### 协议对比
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/java-rmq-01-01.jpg)  
+<center>协议对比</center>  
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/java-rmq-01-02.jpg)  
+<center>常见基础设施与协议支持</center>  
+
+##### MQ对比
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/java-rmq-01-03.jpg)  
+<center>各类 MQ</center>  
+
+- 以往对于 kafka 的吞吐量，是以at most once 投递策略为测试基准的，这种策略下，不保证可靠性，大多数组件使用此策略，吞吐量都有大幅度提升  
+- kafka 使用事务语义实现，并不直接支持 amqp 事务，这个特性体现在客户端程序中  
+- 多个消费者同时消费 kafka 时，根据其机制，需要确保 offset 的一致性，这时候需要引入其他设施来保证  
+- RocketMq 事务支持完整，但是不支持 Amqp，使用过程中，代码移植较麻烦  
+- 对于 RocketMq 的部署，有云服务，必须是有云服务，此类设置是不建议实用云主机搭建的，因为云主机基于内核虚拟化技术，I/O 受制于 cgroup，因此性能与物理主机相比，是大打折扣的，无法保证设施的最大性能  
+- RabbitMq 缺乏消息对账机制，而使用事务和双向确认时，吞吐量无保证（换其他 Mq 也有同样问题）  
+- ActiveMq 的集群，使用的是 LevelDB 数据库作为集群，而不是常见的 mysql  
+- kafaka 并不全面支持 Amqp 事务，对 JMS 支持也不是完整的  
+- ActiveMQ 是这些竞品中，性能最差的，但是也是功能最完整的  
+- Rocket MQ 的 API 和 AMQP 没什么联系，消费端生产端，同时也是所有 MQ中部署成本最高的  
+- RabbitMQ 部署简单，只是缺了消息对账
+
+### RMQ
+##### RMQ的AMQP协议 
+在 2006 年的 6 月，Cisco 、Redhat、iMatix 等联合制定了 AMQP 的公开标准。AMQP，即Advanced Message Queuing Protocol，高级消息队列协议，是应用层协议的一个开放标准，为面向消息的中间件设计，基于此协议的客户端与消息中间件可传递消息，并不受产品、开发语言等条件的限制。消息中间件主要用于组件之间的解耦，消息的发送者无需知道消息使用者的存在，反之亦然。AMQP的主要特征是面向消息、队列、路由（包括点对点和发布/订阅）、可靠性、安全  
 下面是以RMQ为例的AMQP的大致模型：  
 ![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/java-message-amqp-structure.jpg)
 <center>RabbitMQ实现的AMQP</center>  
@@ -46,11 +86,11 @@ RabbitMQ是一个开源的AMQP实现，最初起源于金融系统，用于在�
 - 多语言客户端  
 支持常用语言，如Java、Python、Ruby、PHP、C#、JavaScript等  
 - 管理界面  
-提供简易用户界面( 默认http://localhost:15672 )，可以监控和管理消息、集群中的节点等  
+提供简易用户界面( 默认`http://localhost:15672` )，可以监控和管理消息、集群中的节点等  
 - 插件机制  
 提供了许多插件，以实现从多方面进行扩展，也可以编写自己的插件  
 
-##### RabbitMQ概念
+##### 几个概念
 一般消息队列都离不开三个东西：发消息者、队列和收消息者。RabbitMQ在此基础之上又继续增加了一个交换机（有些时候也被称为路由器）角色，这样发消息者和队列就没有直接联系, 转而变成发消息者把消息给交换机, 交换机根据调度策略再把消息再给队列。因此在RabbitMQ里面，有四个东西需要值得注意：**虚拟主机（Virtual Host），交换机（Exchange），队列（Queue），和绑定（Binding）**  
 当然，有一些文章里面也把整个消息体分得比较详细，具体如下图：  
 ![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/java-message-rmq-structure.jpg)

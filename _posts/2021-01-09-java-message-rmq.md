@@ -1,9 +1,9 @@
 ---
 layout:     post
 title:      "这只兔子该怎么玩儿？"
-subtitle:   "生产者的Confirm/Return、消费者的Auto/Manual、队列的监控"
+subtitle:   "生产者的Confirm/Return、消费者的Auto/Manual、队列的监控、动态队列"
 date:       2021-01-09
-update-date:  2021-01-18
+update-date:  2021-03-20
 author:     "ThreeJin"
 header-mask: 0.5
 catalog: true
@@ -282,4 +282,190 @@ JSONObject result = responseEntity.getBody();
 `http://host:15672/api/queues`  
 
 - 特点  
-这种方法返回的信息特别详细，但是其中会包含一些敏感信息，所以应该考虑怎么处理这个问题，因为是Http的调用，所以也不存在通道的频繁建立销毁问题  
+这种方法返回的信息特别详细，但是其中会包含一些敏感信息，所以应该考虑怎么处理这个问题，因为是Http的调用，所以也不存在通道的频繁建立销毁问题
+
+### 动态队列
+这里的动态队列主要是依靠`RabbitAdmin`这个类来实现：  
+这是`org.springframework.amqp.rabbit.core.RabbitAdmin`包下面的类，为什么要提到这个类呢？是因为之前在项目中有这样的一个需求：队列的名称和数量都是不固定的，需要根据程序启动后动态创建。最开始想到过利用`Channel`的API来进行处理，但是那种机制往往耗费比较大，代码也不够简洁，所以这里记录一下利用`RabbitAdmin`这个类怎么实现队列的动态创建、绑定以及管理
+##### CachingConnectionFactory和RabbitTemplate
+既然是动态创建，所以肯定是基于连接，而提到连接，自然离不开连接工厂。这里有必要注意一点：一般来说，生产者和消费者的连接工厂不建议用同一个，所以一般都会建立两个连接工厂：
+
+```java
+public static RabbitTemplate consumerRabbitTemplate;
+public static RabbitTemplate producerRabbitTemplate;
+public static CachingConnectionFactory consumerConnectionFactory;
+public static CachingConnectionFactory producerConnectionFactory;
+
+public static void buildConnectionFactory() {
+    try {
+        consumerConnectionFactory = new CachingConnectionFactory(HOST,PORT);
+        consumerConnectionFactory.setUsername(USER_NAME);
+        consumerConnectionFactory.setPassword(PASS_WORD);
+        consumerRabbitTemplate =new RabbitTemplate(consumerConnectionFactory);
+
+        producerConnectionFactory = new CachingConnectionFactory(HOST,PORT);
+        producerConnectionFactory.setUsername(USER_NAME);
+        producerConnectionFactory.setPassword(PASS_WORD);
+        producerRabbitTemplate =new RabbitTemplate(producerConnectionFactory);
+    } catch (Exception e) {
+        //do something to deal this exception
+    }
+}
+```
+
+##### 动态生成路由+队列+绑定
+
+```java
+public void buildAllExchangeAndQueues() {
+    try {
+        if (null==producerConnectionFactory) {
+            buildConnectionFactory();
+        }
+        RabbitTemplate template = new RabbitTemplate(producerConnectionFactory);
+        RabbitAdmin admin = new RabbitAdmin(template);
+        //忽略DeclarationException
+        admin.setIgnoreDeclarationExceptions(Boolean.TRUE);
+        //创建路由，以TopicExchange为例
+        TopicExchange exchange=new TopicExchange("自定义路由的名称");
+        admin.declareExchange(exchange);
+        //创建队列并绑定，这里模拟多个队列
+        list.forEach((queueName, item)->{
+            //自定义队列的Args属性
+            Map<String, Object> args = new HashMap<>();
+            args.put("x-message-ttl", 30*1000);
+            //可以配置死信路由的信息
+            args.put("x-dead-letter-exchange", "死信路由的名称");
+            args.put("x-dead-letter-routing-key", "死信路由的routingKey");
+            Queue queue = new Queue(queueName, Boolean.TRUE, Boolean.FALSE,Boolean.FALSE,args);
+            admin.declareQueue(queue);
+            admin.declareBinding(BindingBuilder.bind(queue).to(exchange).with("自定义路由的routingKey"));
+        });
+    } catch (Exception e) {
+        //do something to deal this exception
+    }
+}
+```
+
+##### 生产消息
+
+```java
+/**
+ * 发送消息
+ * @param exchangeName
+ * @param routingKey
+ * @param msg
+ */
+public void sendMsg(String exchangeName,String routingKey,Object msg) {
+    if (null== producerRabbitTemplate) {
+        buildConnectionFactory();
+    }
+    producerRabbitTemplate.convertAndSend(exchangeName,routingKey,JSONObject.toJSONString(msg));
+}
+```
+
+##### 动态监听并消费
+动态监听和消费就要稍微麻烦一点了，这里面的核心类：`MessageListenerAdapter`类（或者实现了`ChannelAwareMessageListener接口`的类）和`SimpleMessageListenerContainer`类  
+- **MessageListenerAdapter**  
+这个类本质上也是实现了`ChannelAwareMessageListener接口`，它的构造方法接受带有消费者逻辑的实现类，跟进去代码，发现默认的消费处理方法是`handleMessage`，所以一般都另起一个类专门作为消费逻辑的实现。我这里采用的方式是自定义了一个`ConsumerHandler`接口，然后里面只有一个`handleMessage`方法：  
+
+```java
+//抽离出来的消费者消费接口
+public interface ConsumerHandler {
+    void handleMessage(String msg);
+}
+
+//某一个消费者的消费逻辑
+@Service
+public class MyConsumerHandlerImpl implements ConsumerHandler {
+    @Override
+    public void handleMessage(String msg) {
+        try {
+            //do something
+        } catch (Exception e) {
+            //这里可以根据具体的业务逻辑来决定怎么处理异常，我这里是直接ack回去
+            throw new ImmediateAcknowledgeAmqpException("error msg", e);
+        }
+    }
+}
+
+//也可以选择实现接口，这种方式比上面的可以有更细节的异常处理
+@Service
+public class MyConsumerHandlerImpl implements ChannelAwareMessageListener {
+    @Override
+    public void onMessage(Message message, Channel channel) throws Exception {
+        
+        try {
+            String msg = new String(message.getBody(), "utf-8");
+        } catch (Exception e) {
+            //这里可以根据具体的业务逻辑来决定怎么处理异常，我这里是直接ack回去
+            throw new ImmediateAcknowledgeAmqpException("error msg", e);
+        }
+    }
+}
+```
+
+- **SimpleMessageListenerContainer类**  
+这个类非常强大，可以利用它做很多设置，基本上能想到的对于消费者的配置项，这个类都可以满足：  
+    - 监听队列（多个队列）、自动启动、自动声明功能  
+    - 可以设置事务特性、事务管理器、事务属性、事务容量（并发）、是否开启事务、回滚消息等  
+    - 可以设置消费者数量、最大最小数量、批量消费  
+    - 设置消息确认和自动确认模式、是否重回队列、异常捕获handler函数  
+    - 设置消费者标签生成策略、是否独占模式、消费者属性等  
+    - 设置具体的转换器、消息转换器等  
+    - 可以进行**动态设置，比如在运行中的应用可以动态修改其消费者数量的大小、接收消息的模式**
+
+很多基于RabbitMQ的自制定化后端管控台在进行动态配置的时候，也是根据这一特性去实现的，话不多说，直接上代码：
+
+```java
+//方法一：自定义的消费逻辑
+public void buildAllQueuesListeners(ConsumerHandler...consumerHandler) {
+    try {
+        if (null == consumerConnectionFactory) {
+            buildConnectionFactory();
+        }
+        //这里模拟多个消费逻辑，把它们都注册到容器中来
+        list.forEach((queueName, item)->{
+            SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
+            //甚至可以监听多个队列
+            //container.setQueues(queue001(), queue002(), queue003(), queue_image(), queue_pdf());
+            container.setQueueNames(queueName);
+            container.setConnectionFactory(consumerConnectionFactory);
+            container.setConcurrentConsumers("设置并发消费者");
+            container.setMaxConcurrentConsumers("设置最大并发消费者");
+            //            container.setDefaultRequeueRejected(requeueRejected);
+            container.setAcknowledgeMode(AcknowledgeMode.AUTO);
+            //注册消费逻辑，根据入参的consumerHandler数组，结合自己的业务来决定注入哪一个消费逻辑
+            container.setMessageListener(new MessageListenerAdapter(consumerHandler[0]));
+            container.doStart();
+        });
+    } catch (Exception e) {
+        //do something to deal this exception
+    }
+}
+
+//方法二：实现ChannelAwareMessageListener接口的消费逻辑
+public void buildAllQueuesListeners(ChannelAwareMessageListener...channelAwareMessageListener) {
+    try {
+        if (null == consumerConnectionFactory) {
+            buildConnectionFactory();
+        }
+        //这里模拟多个消费逻辑，把它们都注册到容器中来
+        list.forEach((queueName, item)->{
+            SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
+            //甚至可以监听多个队列
+            //container.setQueues(queue001(), queue002(), queue003(), queue_image(), queue_pdf());
+            container.setQueueNames(queueName);
+            container.setConnectionFactory(consumerConnectionFactory);
+            container.setConcurrentConsumers("设置并发消费者");
+            container.setMaxConcurrentConsumers("设置最大并发消费者");
+            //            container.setDefaultRequeueRejected(requeueRejected);
+            container.setAcknowledgeMode(AcknowledgeMode.AUTO);
+            //注册消费逻辑，根据入参的消费逻辑处理数组，结合自己的业务来决定注入哪一个消费逻辑
+            container.setMessageListener(channelAwareMessageListener[0]);
+            container.doStart();
+        });
+    } catch (Exception e) {
+        //do something to deal this exception
+    }
+}
+```

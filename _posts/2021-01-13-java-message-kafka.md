@@ -179,6 +179,24 @@ Kafka 的消息分为两层：消息集合 和 消息。一个消息集合中包
 
 ##### 怎么玩？
 - Producer先压缩：`properties.put("compression.type", "gzip");`（使用GZIP的算法进行压缩）  
+
+```java
+/**
+ * Gzip压缩数据
+ * @param data
+ * @return
+ * @throws IOException
+ */
+public static byte[] gZip(byte[] data) throws IOException {
+    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+    try (GZIPOutputStream gzipOutputStream = new GZIPOutputStream(byteArrayOutputStream)) {
+        gzipOutputStream.write(data);
+        gzipOutputStream.finish();
+        return byteArrayOutputStream.toByteArray();
+    }
+}
+```
+
 - Consumer再解压缩：因为采用的何种压缩算法是随着 key、value 一起发送过去的，所以消费者知道采用何种压缩算法
 
 ### 消费者的那些事儿
