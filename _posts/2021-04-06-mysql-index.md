@@ -1,7 +1,7 @@
 ---
 layout:     post
 title:      "又见MySQL-02"
-subtitle:   "索引、执行计划、SQ优化"
+subtitle:   "引擎、索引、执行计划、SQ优化、索引失效"
 date:       2021-04-06
 author:     "ThreeJin"
 header-mask: 0.5
@@ -15,8 +15,53 @@ tags:
 
 ### 前言
 大家都在说SQL的优化，都在说不要`select *`，都在说要建立索引，那是为什么呢？前年刚刚工作的时候，也是稀里糊涂的，只知道个大概，但是细节一些的东西真的没有好好沉淀一下。
-### 索引
-##### 作用
+### 引擎  
+##### 介绍
+- 在MySQL中创建表时可以选择存储引擎。有几种不同的存储引擎，但最常用的是MyISAM和InnoDB，它们都是不同MySQL版本的默认存储引擎  
+- 如果在创建表时没有指定存储引擎，那么将使用MySQL版本的默认引擎  
+- 在5.5.5之前的MySQL版本中，MyISAM是默认值，但是在5.5.5之后的版本中，InnoDB是默认值
+
+##### 主要区别
+- InnoDB较新，MyISAM较老  
+- InnoDB更复杂，而MyISAM更简单  
+- InnoDB在数据完整性方面更加严格，而MyISAM比较松散  
+- InnoDB为插入和更新实现了行级锁，而MyISAM实现了表级锁  
+- InnoDB有事务，而MyISAM没有  
+- InnoDB有外键和关系限制，而MyISAM没有  
+- InnoDB有更好的崩溃恢复，而MyISAM在系统崩溃时无法恢复数据完整性  
+- MyISAM有全文搜索索引，而InnoDB没有  
+- InnoDB采用聚簇索引，MyISAM采用非聚簇索引
+
+这里有一个总结表：  
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/java-mysql-02-10.jpg)  
+<center>InnoDB和MyISAM对比</center>  
+
+##### InnoDB
+- InoDB的优点  
+    - InnoDB应该优先考虑数据完整性，因为它通过关系约束和事务来处理数据完整性  
+    - 在写密集型(插入、更新)表中更快，因为它利用行级锁，并且只保留对正在插入或更新的同一行的更改  
+- InnoDB的缺点  
+    - 由于InnoDB必须处理表之间的不同关系，因此数据库管理员和方案创建者在设计比MyISAM更复杂的数据模型时需要花费更多的时间  
+    - 消耗更多的系统资源，如RAM。事实上，很多人都建议在安装MySQL之后，如果不需要InnoDB引擎，就关闭它  
+    - 没有全文索引
+
+##### MyISAM
+- MyISAM的优点  
+    - 设计和创建更简单，因此更适合初学者。不必担心表之间的外部关系  
+    - 由于结构更简单，服务器资源的成本更低，因此总体上比InnoDB更快  
+    - 全文索引  
+    - 特别适合读密集型(select)表  
+- MyISAM的缺点  
+    - 没有数据完整性(例如，关系约束)检查，这会增加数据库管理员和应用程序开发人员的责任和开销  
+    - 不支持在银行等关键数据应用程序中必不可少的事务  
+    - 对于频繁插入或更新的表，其速度比InnoDB慢，因为对于任何插入或更新，整个表都是锁定的  
+
+##### 总结
+- InnoDB更适合需要频繁插入和更新的数据危急情况  
+- MyISAM在不太依赖于数据完整性的应用程序中执行得更好，这些应用程序通常只选择和显示数据
+
+### 索引  
+##### 作用  
 索引的作用和效果这里就不再赘述了，类似于字典目录的检索一样，提高数据检索的效率。  
 ##### 分类
 不要再一来就是什么B+，B树了，在数据库中，索引是分很多种类的，具体应该针对不同的数据库类型来进行说明  
@@ -127,3 +172,74 @@ MySQL 5.6引入了索引下推优化，默认开启，使用`SET optimizer_switc
 - 计算全表扫描的代价  
 - 计算使用不同索引执行查询的代价  
 - 对比各种执行方案的代价，找出成本最低的那一个
+
+### 索引失效
+既然索引可以提高查询的效率，那是不是我随随便便搞个索引，然后查询的时候带上这个条件，就能发挥作用了呢？其实不然，这里存在一个现象叫**索引失效**。在讲索引失效前，先复习一个命令：`explain`  
+##### explain  
+通过explain可以显示出mysql执行的字段内容：  
+`explain select * from...`  
+- id: SELECT 查询的标识符. 每个 SELECT 都会自动分配一个唯一的标识符  
+- select_type: SELECT 查询的类型  
+- table: 查询的是哪个表  
+- partitions: 匹配的分区  
+- type: join 类型  
+- **possible_keys**: 此次查询中可能选用的索引  
+- **key**: 此次查询中确切使用到的索引  
+- ref: 哪个字段或常数与 key 一起被使用  
+- rows: 显示此查询一共扫描了多少行. 这个是一个估计值  
+- filtered: 表示此查询条件所过滤的数据的百分比  
+- extra: 额外的信息
+
+总结起来，导致索引失效的大体上有这些原因：  
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/java-mysql-02-07.jpg)  
+<center>索引失效总结</center>  
+下面以(name,age,pos,phone)索引为例：  
+
+```sql
+Create Table: CREATE TABLE `user` (
+  `id` int(10) NOT NULL AUTO_INCREMENT,
+  `name` varchar(20) DEFAULT NULL,
+  `age` int(10) DEFAULT '0',
+  `pos` varchar(30) DEFAULT NULL,
+  `phone` varchar(11) DEFAULT NULL,
+  `created_time` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_name_age_pos_phone` (`name`,`age`,`pos`,`phone`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+```
+
+##### 索引失效1：违反最左前缀法则
+如果索引有多列，要遵守最左前缀法则：  
+**即查询从索引的最左前列开始并且不跳过索引中的列**  
+什么意思呢？意思就是：组合索引，不是使用第一列索引时或者使用第一列索引但是调列了，索引失效  
+`explain select * from user where age = 20 and phone = '18730658760' and pos = 'cxy';`  
+##### 索引失效2：在索引列上做任何操作
+对索引字段进行如计算、函数、（自动or手动）类型转换等操作，会导致索引失效从而全表扫描：  
+`explain select * from user where left(name,5) = 'zhangsan' and age = 20 and phone = '18730658760'; `  
+##### 索引失效3：索引列上使用not，<>，!=
+**不等于操作符是永远不会用到索引的**，因此对它的处理只会产生全表扫描  
+优化方法：`key<>0` 改为 `key>0 or key<0`
+##### 索引失效4：全表扫描>索引
+当全表扫描速度比索引速度快时，mysql会使用全表扫描，此时索引失效  
+##### 索引失效5：like以通配符开头（'%abc'）
+like 以%开头，索引无效；当like前缀没有%，后缀有%时，索引有效  
+##### 索引失效6：数据类型出现隐式转化
+如varchar不加单引号的话可能会自动转换为int型，使索引无效，产生全表扫描
+##### 索引失效7：范围查询的右边索引会失效  
+`select * from testTable where a>1 and b=2`  
+- 首先a字段在B+树上是有序的，所以可以用二分查找法定位到1，然后将所有大于1的数据取出来，a可以用到索引  
+- b有序的前提是a是确定的值，那么现在a的值是取大于1的，可能有10个大于1的a，也可能有一百个a  
+- 大于1的a那部分的B+树里，b字段是无序的，所以b不能在无序的B+树里用二分查找来查询，b用不到索引
+
+##### 索引失效的本质
+- 单值索引 
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/java-mysql-02-08.jpg)  
+<center>单值索引B+树示意</center>  
+单值索引在B+树的结构里，一个节点只存一个键值对  
+- 联合索引 
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/java-mysql-02-09.jpg)  
+<center>联合索引B+树示意</center>  
+从本质上来说，联合索引也是一个B+树，和单值索引不同的是，联合索引的键值对不是1，而是大于1个。这里就涉及到B+树的一个排序方式了：  
+**先按照第一个字段排序，如果第一个字段出现相等的情况，就用第二个字段排序。字符串的排序方式：先按照第一个字母排序，如果第一个字母相同，就按照第二个字母排序，以此类推**
+
+**所以，如果查询的时候索引没有符合最左前缀法则，或者有跳列，又或者范围查询右边有索引的时候，那么引擎按照已有的索引排序方式是无法定位数据的（第一个索引字段都没找到自然找不到后续字段）**
