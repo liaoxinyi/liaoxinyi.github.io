@@ -1,7 +1,7 @@
 ---
 layout:     post
 title:      "东拉西扯数据结构-03"
-subtitle:   "HashSet、LinkedHashSet、TreeSet、Map、HashMap、ConcurrentHashMap"
+subtitle:   "HashSet、LinkedHashSet、TreeSet、Map、HashMap、ConcurrentHashMap、并发容器"
 date:       2020-11-20
 author:     "ThreeJin"
 header-mask: 0.7
@@ -10,8 +10,9 @@ header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/datas
 tags:
     - Java
     - 数据结构
+    - 多线程
 ---
-> 《数据结构与算法分析 java语言描述》（原书第3版）+《愚公要移山》-读书笔记
+> 《数据结构与算法分析 java语言描述》（原书第3版）+《愚公要移山》-读书笔记+网络总结（think123等）
 
 ### 前言
 过关斩将，终于到了老生常谈的各种集合了，集合旗下的各类结构简直多得很，大体上分为两个类别：单列集合（Collection接口）和双列结合（Map接口）
@@ -129,16 +130,12 @@ m.put(e, PRESENT)一看e这个key已经存在了，就会将PRESENT替换掉相�
 ![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/datastructure-collection11.jpg)  
 ![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/datastructure-collection12.jpg)  
 
-1. HashMap最早是在jdk1.2中开始出现的，一直到jdk1.7一直没有太大的变化。但是到了jdk1.8突然进行了一个很大的改动：  
+- HashMap最早是在jdk1.2中开始出现的，一直到jdk1.7一直没有太大的变化。但是到了jdk1.8突然进行了一个很大的改动：
 ![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/datastructure-collection14.jpg)  
-
-**之前jdk1.7的存储结构是数组+链表，到了jdk1.8变成了数组+链表+红黑树**  
-
-2. HashMap其实就是一个Node<K,V>数组（JDK7中是Entry数组），**数组长度默认为16（原因参考为啥Node数组的容量一定要是2的整数次幂）**，这个Node可能是链表结构，也可能是红黑树结构，Node对象中包含了键和值，其中next也是一个Node对象，它就是用来处理hash冲突的，形成一个链表  
-
-3. 如果插入的元素key的hashcode值相同（这会导致生成的hash值一样，就冲突啦），那么这些key也会被定位到Node数组的同一个格子里，如果不超过8个使用链表存储。如果**链表的长度超过8个且数组的长度不小于64**，会调用treeifyBin函数，将链表转换为红黑树。那么即使所有key的hashcode完全相同，由于红黑树的特点，查找某个特定元素，也只需要O（logn）的开销，贼快！！！
-
-**一般在这个时候，往往早就已经扩容了**
+<center>HashMap在JDK7和8中的数据结构变化</center>  
+之前jdk1.7的存储结构是数组+链表，到了jdk1.8变成了数组+链表+红黑树**  
+- jdk8中在**数组大于等于64且链表节点数大于等于8**的时候转换为红黑树。当**红黑树节点数量小于6**时又转换为链表  
+- HashMap其实就是一个Node<K,V>数组（JDK7中是Entry数组），**数组长度默认为16（原因参考为啥Node数组的容量一定要是2的整数次幂）**，这个Node可能是链表结构，也可能是红黑树结构，Node对象中包含了键和值，其中next也是一个Node对象，它就是用来处理hash冲突的，形成一个链表
 
 ##### 成员变量  
 ![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/datastructure-collection13.jpg)  
@@ -151,6 +148,7 @@ m.put(e, PRESENT)一看e这个key已经存在了，就会将PRESENT替换掉相�
 这是经过试验很多次后得到的这个值，此时空间利用率比较高，而且避免了相当多的Hash冲突，使得底层的链表或者是红黑树的高度比较低，提升了空间效率  
 如果负载因子很大，比如1，也就意味着，只有当数组全部填充了，才会发生扩容。这就带来了很大的问题，因为Hash冲突是避免不了的。在数组从未满到满的过程中可能已经出现了大量的Hash冲突，底层的红黑树变得异常复杂。对于查询效率极其不利。如果给定合适的负载因子，可以让数组未满时就扩容，牺牲了时间来保证空间的利用率  
 如果负载因子比较小，比如负载因子是0.5的时候，这也就意味着，当数组中的元素达到了一半就开始扩容，既然填充的元素少了，Hash冲突也会减少，那么底层的链表长度或者是红黑树的高度就会降低，查询效率就会增加。一句话总结就是负载因子太小，虽然时间效率提升了，但是空间利用率降低了    
+- **构造HashMap的时候并没有初始化数组容量，而是在第一次put元素的时候才进行初始化的**
 
 ##### hash值  
 HashMap中主要是通过key的hashCode来计算hash值的，只要hashCode相同，计算出来的hash值就一样  
@@ -168,22 +166,32 @@ static final int hash(Object key) {
 
 HashMap即是采用了链地址法解决hash值冲突，也就是数组+链表的方式，如下图：  
 ![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/datastructure-collection17.jpg)  
+<center>HashMap数组+链表的示意图</center>  
 基本思想是将所有哈希地址为i的元素构成一个称为同义词链的单链表，并将单链表的头指针存入哈希表的第i个单元中，因而查找、插入和删除主要在同义词链中进行。链地址法适用于经常进行插入和删除的情况
 
 ##### put(K key, V value)方法  
 ![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/datastructure-collection15.jpg)  
-
+<center>put方法的流程</center>  
+- **put方法的末尾：如果map的容量(存储元素的数量)大于阈值则进行扩容，扩容为之前容量的2倍**
 - Hashtable对哈希表的散列是用hash值对数组length取模（即除法散列法），因为会用到除法运算，效率低，HashMap中则通过h&(length-1)的方法来代替取模，这是改进  
 - 哈希表的容量一定要是2的整数次幂  
 首先，数组length为2的整数次幂的话，h&(length-1)就相当于对length取模，这样便保证了散列的均匀，同时也提升了效率；其次，length为2的整数次幂的话，为偶数，这样length-1为奇数，奇数的最后一位是1，这样便保证了h&(length-1)的最后一位可能为0，也可能为1（这取决于h的值），即与后的结果可能为偶数，也可能为奇数，这样便可以保证散列的均匀性，而如果length为奇数的话，很明显length-1为偶数，它的最后一位是0，这样h&(length-1)的最后一位肯定为0，即只能为偶数，这样任何hash值都只会被散列到数组的偶数下标位置上，这便浪费了近一半的空间，增加了碰撞的几率，减慢了查询的效率，因此，length取2的整数次幂，是为了使不同hash值发生碰撞的概率较小，这样就能使元素在哈希表中均匀地散列  
 - 发生冲突时节点插入链表的链头还是链尾呢？  
 JDK7是头插法，JDK8采用尾插法  
-- 和 Java7 稍微有点不一样的地方就是，Java7 是先扩容后插入新值的，Java8 先插值再扩容
+- 和 Java7 稍微有点不一样的地方就是，Java7 是先扩容后插入新值的，Java8 先插值再扩容  
+- put的时候通过装载因子来判定空闲槽位还有多少，如果超过装载因子的值就会动态扩容,HashMap会扩容为原来的两倍大小(初始容量为16,即槽(数组)的大小为16)
 
 ##### 扩容的流程  
 ![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/datastructure-collection16.jpg)  
-
+<center>扩容的流程</center>  
 HaspMap扩容就是就是先计算 新的hash表容量和新的容量阀值，然后初始化一个新的hash表，将旧的键值对重新映射在新的hash表里。如果在旧的hash表里涉及到红黑树，那么在映射到新的hash表中还涉及到红黑树的拆分
+##### get(Object key)方法 
+get()的方法就相对来说要简单一些了，它最重要的就是找到key是存放在哪个位置：  
+- 先根据key计算hash值  
+- 然后(n-1) & hash确定元素在数组中的位置  
+- 判断数组中第一个元素是否是需要找的元素  
+- 节点如果是树节点,则在红黑树中寻找元素，否则就在链表中寻找对应的节点
+
 ##### Fail-Fast机制
 成员变量：**transient int modCount**  
 - modCount声明为volatile，保证线程之间修改的可见性  
@@ -232,14 +240,8 @@ ConcurrentHashMap的get操作跟HashMap类似，只是ConcurrentHashMap第一次
 
 ##### JDK1.8的实现
 ![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/datastructure-collection19.jpg)  
-已经摒弃了Segment的概念，而是直接用Node数组+链表+红黑树的数据结构来实现，并发控制使用Synchronized和CAS来操作，整个看起来就像是优化过且线程安全的HashMap，虽然在JDK1.8中还能看到Segment的数据结构，但是已经简化了属性，只是为了兼容旧版本
-
-![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/datastructure-collection22.jpg)  
-![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/datastructure-collection23.jpg)  
-
-- 成员变量
-![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/datastructure-collection21.jpg)  
-
+- 已经摒弃了Segment的概念，而是直接用Node数组+链表+红黑树的数据结构来实现  
+- **并发控制使用Synchronized和CAS来操作**，整个看起来就像是优化过且线程安全的HashMap，虽然在JDK1.8中还能看到Segment的数据结构，但是已经简化了属性，只是为了兼容旧版本  
 - Node  
 1. ConcurrentHashMap存储结构的基本单元，继承于HashMap中的Entry，用于存储数据  
 2. 是一个链表，但是只允许对数据进行查找，不允许进行修改  
@@ -257,40 +259,61 @@ ConcurrentHashMap的get操作跟HashMap类似，只是ConcurrentHashMap第一次
 2. 默认的初始化操作并不是在构造函数实现的，而是在put操作中实现  
 3. 其他构造函数则参考HashMap即可
 
-- put方法  
-1. 如果没有初始化就先调用initTable（）方法来进行初始化过程  
-2. 如果没有hash冲突就直接CAS插入  
+- **put方法**  
+1. 如果没有初始化就先调用`initTable()`方法来进行初始化过程  
+2. **如果没有hash冲突就直接CAS插入**  
 3. 如果还在进行扩容操作就先进行扩容  
-4. 如果存在hash冲突，就加锁来保证线程安全，这里有两种情况，一种是链表形式就直接遍历到尾端插入，一种是红黑树就按照红黑树结构插入  
-5. 最后一个如果Hash冲突时会形成Node链表，在链表长度超过8，Node数组超过64时会将链表结构转换为红黑树的结构，break再一次进入循环  
-6. 如果添加成功就调用addCount（）方法统计size，并且检查是否需要扩容
+4. **如果存在hash冲突，就加锁(Synchronized将该链表锁定)来保证线程安全**，这里有两种情况，一种是链表形式就直接遍历到尾端插入，一种是红黑树就按照红黑树结构插入   
+5. 如果添加成功就调用`addCount()`方法统计size，并且检查是否需要扩容  
+6. 在强一致的场景中`ConcurrentHashMap`就不适用，原因是**ConcurrentHashMap 中的 `get、size `等方法没有用到锁**，因此返回的数据就不准确, ConcurrentHashMap 是弱一致性的，因此有可能会导致某次读无法马上获取到写入的数据
 
 - 扩容方法：transfer（）  
-1. 有helpTransfer（）方法的调用多个工作线程一起帮助进行扩容  
-【等待更新】
-
-在并发处理中使用的是乐观锁，当有冲突的时候才进行并发处理，而且流程步骤很清晰，但是细节设计的很复杂，毕竟多线程的场景也复杂  
-
+有helpTransfer（）方法的调用多个工作线程一起帮助进行扩容  
 - get方法  
 1. 计算hash值，定位到该table索引位置，如果是首节点符合就返回  
 2. 如果遇到扩容的时候，会调用标志正在扩容节点ForwardingNode的find方法，查找该节点，匹配就返回  
 3. 以上都不符合的话，就往下遍历节点，匹配就返回，否则最后就返回null
 
 - 总结  
-1. 可以看出JDK1.8版本的ConcurrentHashMap的数据结构已经接近HashMap，相对而言，ConcurrentHashMap只是增加了同步的操作来控制并发
-
-2. 从JDK1.7版本的**ReentrantLock+Segment+HashEntry**，到JDK1.8版本中**synchronized+CAS+HashEntry+红黑树**
-
-3. JDK1.8的实现降低了锁的粒度  
-JDK1.7版本锁的粒度是基于Segment的，包含多个HashEntry，而JDK1.8锁的粒度就是HashEntry（首节点）
-
+1. 可以看出JDK1.8版本的`ConcurrentHashMap`的数据结构已经接近`HashMap`，相对而言，`ConcurrentHashMap`只是增加了同步的操作来控制并发  
+2. 从JDK1.7版本的**ReentrantLock+Segment+HashEntry**，到JDK1.8版本中**synchronized+CAS+HashEntry+红黑树**  
+3. JDK1.8的实现降低了锁的粒度：**JDK1.7版本锁的粒度是基于Segment的**，包含多个HashEntry，而JDK1.8锁的粒度就是HashEntry，但保留了简化属性的Segment接口以兼容旧版本  
 4. JDK1.8版本的数据结构变得更加简单，使得操作也更加清晰流畅  
-因为已经使用synchronized来进行同步，所以不需要分段锁的概念，也就不需要Segment这种处理方式了（但保留了简化属性的Segment接口以兼容旧版本），由于粒度的降低，实现的复杂度也增加了
-
 5. JDK1.8使用红黑树来优化链表  
-基于长度很长的链表的遍历是一个很漫长的过程，而红黑树的遍历效率是很快的，代替一定阈值的链表，这样形成一个最佳拍档
-
-6. 为啥使用synchronized而不用ReentrantLock？  
+6. 为啥使用`synchronized`而不用`ReentrantLock`？  
     - 因为粒度降低了，在相对而言的低粒度加锁方式，synchronized并不比ReentrantLock差。在粗粒度加锁中ReentrantLock的优势是可以通过Condition来控制各个低粒度的边界，更加的灵活。而在低粒度中，Condition的优势就没有了  
     - JVM的开发团队从来都没有放弃synchronized，而且基于JVM的synchronized优化空间更大，使用内嵌的关键字比使用API更加自然  
     - 在大量的数据操作下，对于JVM的内存压力，基于API的ReentrantLock会开销更多的内存，虽然不是瓶颈，但是也是一个选择依据  
+    
+### 并发容器
+##### 并发下的Map
+- **线程安全，安全的Map对象 `Hashtable`、`ConcurrentHashMap` 以及`ConcurrentSkipListMap` 三个容器**  
+- `Hashtable` VS `ConcurrentHashMap`  
+    - Hashtable在它所有的获取或者修改数据的方法上都添加了Synchronized  
+    - 虽然 ConcurrentHashMap 的整体性能要优于 Hashtable，但在某些场景中，ConcurrentHashMap 依然不能代替 Hashtable  
+    - 在强一致的场景中ConcurrentHashMap 就不适用，原因是 ConcurrentHashMap 中的 get、size 等方法没有用到锁，因此返回的数据就不准确, ConcurrentHashMap 是弱一致性的，因此有可能会导致某次读无法马上获取到写入的数据  
+- `ConcurrentHashMap` VS `ConcurrentSkipListMap`  
+    - ConcurrentHashMap 数据量比较大的时候，链表会转换为红黑树。红黑树在并发情况下，删除和插入过程中有个平衡的过程，会牵涉到大量节点，因此竞争锁资源的代价相对比较高  
+    - ConcurrentSkipListMap由于是基于跳表实现的，它需要锁住的节点要少一些，在高并发场景下性能也要好一些：**新增节点和链接索引都是基于 CAS 操作实现**  
+- 总结  
+    - 当不需要知道集合中准确数据的时候使用`ConcurrentHashMap`，当需要知道集合中准确数据个数时，则需要用到`HashTable`  
+    - 如果数据量特别大，且存在大量增删改查操作，则可以考虑使用`ConcurrentSkipListMap`  
+    - **这三个线程安全的容器类`key,value`都不允许为null**,而平时使用的HashMap的key是可以为null,value不能为null的
+    
+##### 并发下的List
+- **线程安全，安全的List对象 `Vector`、`CopyOnWriteList`**  
+- `CopyOnWriteList`实现了读操作无锁，写操作则通过先复制一个新的数组，将数据写入到新的数组中，再将新的数组赋值给旧数组来实现，是一种读写分离的并发策略  
+- `CopyOnWriteList`更适用于读远大于写的操作，同时业务场景对写入数据的实时获取并没有要求,只需要保证最终能获取到写入数组中的数据就可以了
+
+##### 并发下的Set
+- **线程安全，安全的List对象 `CopyOnWriteArraySet`、`ConcurrentSkipListSet`**  
+- CopyOnWriteArraySet是使用CopyOnWriteArrayList实现的，而 ConcurrentSkipListSet 又是使用 ConcurrentSkipListMap实现的  
+
+##### 并发下的Queue
+Queue的分类大致上可以从两个维度来分：  
+- 阻塞与非阻塞  
+    - 所谓阻塞指的是当队列已满时，入队操作阻塞；当队列已空时，出队操作阻塞  
+    - Java 并发包里阻塞队列都用 `Blocking` 关键字标识  
+- 单端与双端  
+    - 单端指的是只能队尾入队，队首出队；而双端指的是队首队尾皆可入队出队  
+    - 单端队列使用 `Queue` 标识，双端队列使用 `Deque` 标识
