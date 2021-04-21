@@ -1,7 +1,7 @@
 ---
 layout:     post
 title:      "就决定是你了，Kafka-01"
-subtitle:   "概念、基本原理、消费者/生产者代码"
+subtitle:   "概念、基本原理、消费者(@KafkaListener)/生产者代码"
 date:       2021-01-11
 author:     "ThreeJin"
 header-mask: 0.5
@@ -95,33 +95,24 @@ kafka已成为大数据的重要组件，与zookeeper等组件配合，在大数
 ##### 角色理解
 ![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/kafka01.jpg)  
 <center>kafka的角色示意</center>  
-以topic+分区进行组织，每一个topic可以创建多个分区，每一个分区包含单独的文件夹，并且是多副本机制，即topic的每一个分区会有Leader与Follower，并且Kafka内部有机制保证topic的某一个分区的Leader与follow不会存在在同一台机器，并且每一台broker会尽量均衡的承担各个分区的Leader，当然在运行过程中如果不均衡，可以执行命令进行手动重平衡。Leader节点承担一个分区的读写，follow节点只负责数据备份。
-
-- **Leader与Follower**  
-1. Kafka 的负载均衡主要依靠分区 Leader 节点的分布情况，分区的Leader节点负责读写，而Follower节点负责数据同步
-
-2. 如果Leader分区所在的Broker机器发生宕机，会触发主从节点的切换，会在剩下的follow节点中选举产生一个新的Leader节点
-
-3. 如果某一个分区有三个副本因子，就算其中一个挂掉，那么只会剩下的两个中，选择一个leader。此时不会在其他的broker中另启动一个副本（因为在另一台启动的话，存在数据传递，只要在机器之间有数据传递，就会长时间占用网络IO），这里涉及到**同步副本**、**非同步副本**、**不完全首领选举**
-
-4. ack的作用：①ack=0代表不等broker端确认就直接返回，即客户端将消息发送到网络中就返回发送成功②ack=1代表Leader节点接受并存储后向客户端返回成功③ack=-1代表Leader节点和所有的Follower节点接受并成功存储再向客户端返回成功
-
-- **partition与consumergroup**  
-1. **partition数量决定了每个consumer group中并发消费者的最大数量**
-
-2. 某一个主题下的分区数，对于消费该主题的同一个消费组下的消费者数量，应该小于等于该主题下的分区数
-
-3. 分区数越多，同一时间可以有越多的消费者来进行消费，消费数据的速度就会越快，提高消费的性能
-
-- **partition replicas与ISR**
-
-![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/kafka04.jpg) 
-
-1. 副本因子/副本数（replication-factor）：控制消息保存在几个broker（服务器）上，一般情况下副本数等于broker的个数
-
-2. 副本因子操作以分区为单位的。每个分区都有各自的主副本（Leader）和从副本（Follower）
-
-3. 处于同步状态的副本（当前可用的副本）叫做in-sync-replicas(ISR)
+每一个topic可以创建多个分区，每一个分区包含单独的文件夹，并且是多副本机制，即topic的每一个分区会有Leader与Follower，并且Kafka内部有机制保证topic的某一个分区的Leader与follow不会存在在同一台机器，并且每一台broker会尽量均衡的承担各个分区的Leader，当然在运行过程中如果不均衡，可以执行命令进行手动重平衡。Leader节点承担一个分区的读写，follow节点只负责数据备份  
+- **Leader、Follower**  
+    - Kafka 的负载均衡主要依靠分区 Leader 节点的分布情况，分区的Leader节点负责读写，而Follower节点负责数据同步  
+    - 如果Leader分区所在的Broker机器发生宕机，会触发主从节点的切换，会在剩下的follow节点中选举产生一个新的Leader节点（这里有**同步副本**、**非同步副本**、**不完全首领选举**概念）  
+    - 如果某一个分区有三个副本因子，就算其中一个挂掉，那么只会剩下的两个中，选择一个leader。此时不会在其他的broker中另启动一个副本（因为在另一台启动的话，存在数据传递，只要在机器之间有数据传递，就会长时间占用网络IO）  
+- **ack**  
+    - `ack=0`代表不等broker端确认就直接返回，即客户端将消息发送到网络中就返回发送成功  
+    - `ack=1`代表发送过去，等待首领副本确认消息，认为成功。这里就有点意思了，首领肯定收到了消息，写入了分区文件，但是不一定全部都落盘了  
+    - `ack=all`代表发送过去之后，消息被写入所有同步副本之后才会认为成功  
+- **partition、consumergroup**  
+    - **partition数量决定了每个consumer group中并发消费者的最大数量**  
+    - 分区数越多，同一时间可以有越多的消费者来进行消费，消费数据的速度就会越快，提高消费的性能  
+- **partition replicas、ISR**  
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/kafka04.jpg)  
+<center>分区副本示意图</center>  
+    - 副本因子/副本数（replication-factor）：控制消息保存在几个broker（服务器）上，一般情况下副本数等于broker的个数  
+    - 副本因子操作以分区为单位的。每个分区都有各自的主副本（Leader）和从副本（Follower）  
+    - 处于同步状态的副本叫做in-sync-replicas(ISR)
 
 ##### 消息写入时发生了什么？
 - 正常过程  
@@ -130,12 +121,16 @@ kafka已成为大数据的重要组件，与zookeeper等组件配合，在大数
     ![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/kafka02.jpg)  
     <center>segment中的大致内容示意</center>  
     - 每个part在内存中对应一个index，记录每个segment中的第一条消息偏移  
-    - 发布者发到某个topic的消息会被均匀的分布到多个partition上（或根据用户指定的路由规则进行分布），broker收到发布消息后会往对应partition的最后一个segment上添加该消息，当某个segment上的消息条数达到配置值或消息发布时间超过阈值时，segment上的消息会被flush到磁盘，只有flush到磁盘上的消息订阅者才能订阅到，segment达到一定的大小后将不会再往该segment写数据，broker会创建新的segment  
+    - 发布者发到某个topic的消息会被均匀的分散到多个`partition`上（或根据用户指定的路由规则进行分布），broker收到发布消息后会往对应partition的最后一个segment上添加该消息，当某个segment上的消息条数达到配置值或消息发布时间超过阈值时，segment上的消息会被flush到磁盘，只有flush到磁盘上的消息订阅者才能订阅到，segment达到一定的大小后将不会再往该segment写数据，broker会创建新的segment  
 - 负载均衡  
     - producer可以自定义发送到哪个partition的路由规则。默认路由规则：hash(key)%numPartitions，如果key为null则随机选择一个partition  
     - 自定义路由：如果key是一个user id，可以把同一个user的消息发送到同一个partition，这时consumer就可以从同一个partition读取同一个user的消息
+
 ##### Kafka 为何如此之快？
-Kafka 实现了零拷贝原理来快速移动数据，避免了内核之间的切换。Kafka 可以将数据记录分批发送，从生产者到文件系统（Kafka 主题日志）到消费者，可以端到端的查看这些批次的数据。批处理能够进行更有效的数据压缩并减少 I/O 延迟，Kafka **采取顺序写入磁盘的方式，避免了随机磁盘寻址的浪费**  
+- Kafka 实现了零拷贝原理来快速移动数据，避免了内核之间的切换  
+- Kafka 可以将数据记录分批发送，从生产者到文件系统（Kafka 主题日志）到消费者，可以端到端的查看这些批次的数据  
+- 批处理能够进行更有效的数据压缩并减少 I/O 延迟  
+- Kafka **采取顺序写入磁盘的方式，避免了随机磁盘寻址的浪费**  
 总结起来就是：**`顺序读写、零拷贝、消息压缩、分批发送`**
 
 ### 实战-消费者  
@@ -354,16 +349,59 @@ session.timeout.ms最好几倍于heartbeat.interval.ms；这是因为如果因�
 ##### 消费类
 
 ```java
-@KafkaListener(id = "consumer-xxxx",topics = "${xxxxx}",containerFactory = "batchListenerContainerFactory")
-public void receiveQueue(List<ConsumerRecord<?, ?>> records) {
+/**
+ * 注解的释义
+ * id：消费者的id，当GroupId没有被配置的时候，默认id为GroupId
+ * containerFactory：监听容器工厂，也就是ConcurrentKafkaListenerContainerFactory，一般对应项目中配置的BeanName
+ * topics：需要监听的Topic，可监听多个
+ * topicPartitions：可配置更加详细的监听信息，必须监听某个Topic中的指定分区，或者从offset为200的偏移量开始监听
+ * errorHandler：监听异常处理器，配置BeanName
+ * groupId：消费组ID
+ * idIsGroup：id是否为GroupId
+ * clientIdPrefix：消费者Id前缀
+ * beanRef：真实监听容器的BeanName，默认为"__listener"
+ */
+@KafkaListener(id = "consumer-xxxx",topics = "${xxxxx}",containerFactory = "batchListenerContainerFactory",topicPartitions = {
+            @TopicPartition(topic = "topic.quick.batch.partition",partitions = {"1","3"}),
+            @TopicPartition(topic = "topic.quick.batch.partition",partitions = {"0","4"},
+                    partitionOffsets = @PartitionOffset(partition = "2",initialOffset = "100"))
+        })
+/**
+ * 入参的释义
+ * ConsumerRecord：具体消费数据类，包含Headers信息、分区信息、时间戳等，List集合的则是用作批量消费
+ * Acknowledgment：用作Ack机制的接口
+ * Consumer：消费者类，使用该类我们可以手动提交偏移量、控制消费速率等功能
+ */
+public void receiveQueue(List<ConsumerRecord<?, ?>> records,Acknowledgment ack, Consumer<K,V> consumer) {
     records.forEach(message->{
         //do something.根据生产者发送的消息体来进行消息获取，比如string时
         JSONObject jsonObject = JSONObject.parseObject((String)message.value());
+        //ack的处理
+        ack.acknowledge();
+        //seek的处理：可以指定从哪个主题的哪个分区的哪个offset开始进行消费
+        consumer.seek(new TopicPartition("自定义的topic",record.partition()),record.offset() );
     }
+}
+
+//除了从ConsumerRecord类中获取消息头等外，还可以根据注解方式获取消息头及消息体
+@KafkaListener(id = "anno", topics = "topic.quick.anno")
+/**
+ * @Payload：获取的是消息的消息体，也就是发送内容
+ * @Header(KafkaHeaders.RECEIVED_MESSAGE_KEY)：获取发送消息的key
+ * @Header(KafkaHeaders.RECEIVED_PARTITION_ID)：获取当前消息是从哪个分区中监听到的
+ * @Header(KafkaHeaders.RECEIVED_TOPIC)：获取监听的TopicName
+ * @Header(KafkaHeaders.RECEIVED_TIMESTAMP)：获取时间戳
+ */
+public void annoListener(@Payload List<String> data,
+                         @Header(KafkaHeaders.RECEIVED_MESSAGE_KEY) Integer key,
+                         @Header(KafkaHeaders.RECEIVED_PARTITION_ID) int partition,
+                         @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
+                         @Header(KafkaHeaders.RECEIVED_TIMESTAMP) long ts) {
+    
 }
 ```
 
-### 实战-生产者 
+### 实战-生产者（无情的send） 
 ##### 依赖
 ```xml
 <dependency>
