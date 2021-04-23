@@ -1,7 +1,7 @@
 ---
 layout:     post
 title:      "就决定是你了，Kafka-01"
-subtitle:   "概念、基本原理、消费者(@KafkaListener)/生产者代码"
+subtitle:   "概念和几个角色、消费者(@KafkaListener)/生产者(ProducerRecord)代码"
 date:       2021-01-11
 author:     "ThreeJin"
 header-mask: 0.5
@@ -84,7 +84,7 @@ kafka已成为大数据的重要组件，与zookeeper等组件配合，在大数
 8. **.log**：存放生产者发送的数据文件  
 9. **.index**：存放`.log`文件的数据索引值，用于加快数据的查询速度
 
-具体的详细角色内容介绍，可以参考下一篇内容:[就决定是你了，Kafka-02](https://www.threejinqiqi.fun/2021/01/13/java-message-kafka/)  
+具体的详细角色内容介绍以及kafka是如何进行数据查询的，可以参考下一篇内容:[就决定是你了，Kafka-02](https://www.threejinqiqi.fun/2021/01/13/java-message-kafka/)  
 
 - 特征  
 1. kafka支持消息持久化  
@@ -112,19 +112,7 @@ kafka已成为大数据的重要组件，与zookeeper等组件配合，在大数
 <center>分区副本示意图</center>  
     - 副本因子/副本数（replication-factor）：控制消息保存在几个broker（服务器）上，一般情况下副本数等于broker的个数  
     - 副本因子操作以分区为单位的。每个分区都有各自的主副本（Leader）和从副本（Follower）  
-    - 处于同步状态的副本叫做in-sync-replicas(ISR)
-
-##### 消息写入时发生了什么？
-- 正常过程  
-    - kafka以topic来进行消息管理，每个topic包含多个partition，每个partition对应一个逻辑log，由多个segment组成  
-    - 每个segment中存储多条消息，消息id由其逻辑位置决定，即从消息id可直接定位到消息的存储位置，避免id到位置的额外映射  
-    ![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/kafka02.jpg)  
-    <center>segment中的大致内容示意</center>  
-    - 每个part在内存中对应一个index，记录每个segment中的第一条消息偏移  
-    - 发布者发到某个topic的消息会被均匀的分散到多个`partition`上（或根据用户指定的路由规则进行分布），broker收到发布消息后会往对应partition的最后一个segment上添加该消息，当某个segment上的消息条数达到配置值或消息发布时间超过阈值时，segment上的消息会被flush到磁盘，只有flush到磁盘上的消息订阅者才能订阅到，segment达到一定的大小后将不会再往该segment写数据，broker会创建新的segment  
-- 负载均衡  
-    - producer可以自定义发送到哪个partition的路由规则。默认路由规则：hash(key)%numPartitions，如果key为null则随机选择一个partition  
-    - 自定义路由：如果key是一个user id，可以把同一个user的消息发送到同一个partition，这时consumer就可以从同一个partition读取同一个user的消息
+    - 处于同步状态的副本叫做`in-sync-replicas(ISR)`
 
 ##### Kafka 为何如此之快？
 - Kafka 实现了零拷贝原理来快速移动数据，避免了内核之间的切换  

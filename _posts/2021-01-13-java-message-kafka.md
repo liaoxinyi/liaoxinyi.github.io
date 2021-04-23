@@ -1,7 +1,7 @@
 ---
 layout:     post
 title:      "就决定是你了，Kafka-02"
-subtitle:   "生产者的深入、分区策略、Kafka压缩、消费者的深入、偏移量"
+subtitle:   "生产者的深入、分区策略、Kafka压缩、消费者的深入、偏移量、Kafka是怎么查找数据的？"
 date:       2021-01-13
 author:     "ThreeJin"
 header-mask: 0.5
@@ -229,6 +229,8 @@ public static byte[] gZip(byte[] data) throws IOException {
 这是某一个分区的offset情况，我们已经知道生产者写入的offset是最新最大的值也就是12，而当Consumer A进行消费时，他从0开始消费，一直消费到了9，它的offset就记录在了9，再比如Consumer B就纪录在了11。等下一次他们再来消费时，他们可以选择接着上一次的位置消费，当然也可以选择从头消费，或者跳到最近的记录并从“现在”开始消费。  
 - **总的说明**  
 ![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/kafka10.jpg)  
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/kafka-file-distribution.jpg) 
+<center>kafka的文件组成</center>
     - 每个分区是由多个Segment组成，当Kafka要写数据到一个partition时，它会写入到状态为active的segment中。如果该segment被写满，则一个新的segment将会被新建，然后变成新的“active” segment  
     - **偏移量**：分区中的每一条消息都会被分配的一个连续的id值，该值用于唯一标识分区中的每一条消息  
     - 每个segment中则保存了真实的消息数据。每个Segment对应于一个索引文件与一个日志文件。segment文件的生命周期是由Kafka Server的配置参数所决定的。比如说，server.properties文件中的参数项`log.retention.hours=168`就表示7天后删除老的消息文件  
@@ -237,10 +239,17 @@ public static byte[] gZip(byte[] data) throws IOException {
         2. **00000000000000000000.log**：它是segment文件的数据文件，用于存储实际的消息。该文件是二进制格式的。log文件是存储在 `ConcurrentSkipListMap` 里的，是一个map结构，**key是文件名（offset）**，value是内容，这样在查找指定偏移量的消息时，用二分查找法就能快速定位到消息所在的数据文件和索引文件  
         3. **00000000000000000000.timeindex**：基于时间戳的索引文件  
         4. 命名规则：partition全局的第一个segment从0开始，**后续每个segment文件名为上一个segment文件最后一条消息的offset值**。没有数字则用0填充  
+    - broker收到发布消息后会往对应partition的最后一个segment上添加该消息，当某个segment上的消息条数达到配置值或消息发布时间超过阈值时，segment上的消息会被flush到磁盘，只有flush到磁盘上的消息订阅者才能订阅到，segment达到一定的大小后将不会再往该segment写数据，broker会创建新的segment  
     - 新数据加在文件的末尾(调用内部方法)，不论文件多大，该操作的时间复杂度都是O(1)，但是在查找某个 offset 的时候，是顺序查找，如果文件很大的话，查找的效率就会很低  
-    - **通过二分查找文件列表，快速定位到具体的segment文件，再以对应的.index作为索引在.log中查找具体的消息**  
+    - **根据Offset的值通过二分查快速定位到具体的segment文件，再进入该segment中的.index文件中，同样利用二分法查找相对 Offset 小于或者等于指定的相对 Offset 的索引条目中最大的那个相对 Offset，然后对应的值为.log中存储的物理偏移位置，然后打开.log文件，从对应物理位置开始顺序扫描直到找到 Offset 为给定值的那条 Message**  
+    - 无论消息是否被消费，Kafka 都会保存所有的消息：**基于时间，默认配置是 168 小时（7 天）**、**基于大小，默认配置是 1073741824**  
+    - Kafka 读取特定消息的时间复杂度是 O(1)，所以这里**删除过期的文件并不会提高 Kafka 的性能**  
     - `poll()方法`：消费者在每次调用该方法进行定时轮询的时候，会返回由生产者写入 Kafka 但是还没有被消费者消费的记录，因此可以追踪到哪些记录是被群组里的哪个消费者读取的。消费者可以使用 Kafka 来追踪消息在分区中的位置（偏移量）  
-    - `重平衡提交`：消费者会向一个叫做 `_consumer_offset` 的特殊主题中发送消息，这个主题会保存每次所发送消息中的分区偏移量，**这个主题的主要作用就是消费者触发重平衡后记录偏移使用的**，消费者每次向这个主题发送消息，**正常情况下不触发重平衡，这个主题是不起作用的**，当触发重平衡后，消费者停止工作，每个消费者可能会分到对应的分区，这个主题就是让消费者能够继续处理消息所设置的  
+    - `_consumer_offset`  
+        1. `_consumer_offsets`作为kafka的内部topic，用来保存消费组元数据以及对应提交的offset信息  
+        2. 每次消费者消费完一批数据需要标记这批数据被消费掉时，需要将消费的偏移量即offset提交掉，这个提交过程其实就是将offset信息写入`_consumer_offsets`的过程  
+        3. 消费者poll数据时会去创建`_consumer_offsets`，当然前提是`_consumer_offsets`不存在的情况下
+        
 - **消息丢失和重复消费**  
     - `重复消费：提交偏移量<消费者实际处理的最后一个消息的偏移量`    
         ![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/kafka07.jpg)   

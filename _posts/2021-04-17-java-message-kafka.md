@@ -1,8 +1,8 @@
 ---
 layout:     post
-title:      "就决定是你了，Kafka-02"
+title:      "就决定是你了，Kafka-03"
 subtitle:   "如何保证消息不丢失？如何保证消息顺序？"
-date:       2021-01-13
+date:       2021-04-17
 author:     "ThreeJin"
 header-mask: 0.5
 catalog: true
@@ -16,18 +16,29 @@ tags:
 ### 前言
 这一篇主要想记录一下在kafka中如何保证消息的消费顺序以及如何保证消息不丢失。
 ### 为啥会丢失呢？  
-##### kafka的服务层面原因   
-- leader副本和follower副本   
-这个问题涉及到kafka的复制机制，kafka每个topic有多个分区，分区存储在磁盘上，kafka可以保证分区的数据是有序的，每个分区可以有多个副本。同时，副本按照是否是首领，可以分为首领副本和跟随者副本（这里对应的就是kafka集群中的leader和follower）  
-- 同步副本和非同步副本  
-除开leader副本外，其他副本按照和leader副本的同步的状态可以分为同步副本和非同步副本    
-**小细节：kafka 如何判断一个follower副本是不是同步副本？**  
-满足两个个条件：1.在过去`replica.lag.time.max`参数毫秒内从首领获取过消息，并且是最新消息。 2.过去6秒内 和 zk直接发送过心跳。   
-- 选举过程  
-    - 所有的消息都是发送给leader的，消息消费也是从leader获取的。leader副本总是第一时间收到消息，或者消费消息。所以leader副本同时也一定是同步副本。其他follower都是和leader保持通信，同步leader的消息。当leader不可用时，会选举一个follower会变成leader  
-    - 对于一个主一个从的两个kafka，做的集群来说。一个是leader副本，一个是follower副本。当follower副本一直能与leader副本保持同步的时候 follower副本是同步副本，当follower与leader无法保持同步的时候 follower副本则变成非同步副本。如果leader宕机，这时候系统需要选举一个follower来作为首领，kafka优先选择同步副本作为首领，当系统没有同步副本的时候。kafka如果选择非同步副本作为首领，则会丢失一部分数据，（这一部分数据就是非同步副本无法及时从首领副本更新的消息）。kafka如果不选择非同步副本作为首领，则此时kafka集群不可用。  
+##### Broker的原因   
+- kafka批量入盘  
+Broker丢失消息是由于Kafka本身的原因造成的，kafka为了得到更高的性能和吞吐量，将数据异步批量的存储在磁盘中。消息的刷盘过程，为了提高性能，减少刷盘次数，kafka采用了批量刷盘的做法。即按照一定的消息量，和时间间隔进行刷盘  
+- linux操作系统批量入盘  
+将数据存储到linux操作系统种，会先存储到页缓存`Page cache`中，按照时间/`fsync命令`或者其他条件再从页缓存刷入`file`。如果数据在page cache中时系统挂掉，数据会丢失  
+- 不完全首领选举  
+    - leader副本和follower副本   
+    这个问题涉及到kafka的复制机制，kafka每个topic有多个分区，分区存储在磁盘上，kafka可以保证分区的数据是有序的，每个分区可以有多个副本。同时，副本按照是否是首领，可以分为首领副本和跟随者副本（这里对应的就是kafka集群中的leader和follower）  
+    - 同步副本和非同步副本  
+    除开leader副本外，其他副本按照和leader副本的同步的状态可以分为同步副本和非同步副本    
+    **小细节：kafka 如何判断一个follower副本是不是同步副本？**  
+    满足两个个条件：1.在过去`replica.lag.time.max`参数毫秒内从首领获取过消息，并且是最新消息。 2.过去6秒内 和 zk直接发送过心跳。   
+    - 选举过程  
+    如果leader宕机，这时候系统需要选举一个follower来作为首领，kafka优先选择同步副本作为首领，当系统没有同步副本的时候。kafka只有选择非同步副本作为首领，则会丢失一部分数据，（这一部分数据就是非同步副本无法及时从首领副本更新的消息）。kafka如果不选择非同步副本作为首领，则此时kafka集群不可用  
 
-##### 消费者层面原因  
+##### Producer的原因
+为了提升效率，减少IO，producer在发送数据时可以将多个请求进行合并后发送。被合并的请求咋发送一线缓存在本地buffer中。缓存的方式和前文提到的刷盘类似，producer可以将请求打包成“块”或者按照时间间隔，将buffer中的数据发出  
+在正常情况下，客户端的异步调用可以通过callback来处理消息发送失败或者超时的情况，但是：  
+- producer被非法的停止了，那么buffer中的数据将丢失，broker将无法收到该部分数据  
+- producer客户端内存不够时，如果采取的策略是丢弃消息（另一种策略是block阻塞），消息也会被丢失  
+- producer的异步send()过快，导致挂起线程过多，内存不足，程序崩溃，消息丢失
+    
+##### Consumer的原因  
 常见的就是多线程消费时选择了自动提交偏移量  
 ### 怎么保证消息不丢失
 ##### kafka服务保证  
@@ -328,4 +339,18 @@ public class HandleRebalance implements ConsumerRebalanceListener {
     }
 }
 ```
+
+### 如何保证消息顺序？
+我们都知道kafka里面，单个分区的消息是有序的（因为内部有offset，当然排除重复消费和消息丢失的异常情况），但是针对多个分区的时候，其实是无序的，这个也叫做全局无序。所以，一般我们说保证kafka的消息有序的话，大多数是指当有多个分区的时候，怎么保证消息有序？
+##### 问题
+比如说我们建了一个 topic，有三个 partition。生产者在写的时候，其实可以指定一个 key，比如说我们指定了某个订单 id 作为 key，那么这个订单相关的数据，一定会被分发到同一个 partition 中去，而且这个 partition 中的数据一定是有顺序的  
+消费者从 partition 中取出来数据的时候，也一定是有顺序的。到这里，顺序还是 ok 的，没有错乱。接着，我们在消费者里可能会搞多个线程来并发处理消息。因为如果消费者是单线程消费处理，而处理比较耗时的话，比如处理一条消息耗时几十 ms，那么 1 秒钟只能处理几十条消息，这吞吐量太低了。而多个线程并发跑的话，顺序可能就乱掉了  
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/java-kafka-03-01.jpg)  
+<center>问题场景</center>   
+
+##### 解决方案
+- 一个 topic，一个 partition，一个 consumer，内部单线程消费，单线程吞吐量太低，一般不会用这个  
+- 写 N 个内存 queue，具有相同 key 的数据都到同一个内存 queue；然后对于 N 个线程，每个线程分别消费一个内存 queue 即可，这样就能保证顺序性  
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/java-kafka-03-02.jpg)  
+<center>queue保证消息顺序</center>   
 
