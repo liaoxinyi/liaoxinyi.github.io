@@ -22,33 +22,35 @@ tags:
 **总的来说，就是依据AOP的思路，在业务代码的前后增加了切面，切面内容就是开启和关闭事务**
 ### AOP和Spring AOP
 AOP是一种通用的编程思想，Java里有2种实现方式：  
-- Spring AOP  
+- 方式一：Spring AOP  
 基于动态代理实现：JDK代理或者Cglib代理  
 ![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/java-spring-01-01.jpg)  
 <center>springAOP中的JDK代理和Cglib代理区别</center>  
-所以，在Spring中的`@Transaction`注解就可以大致描述为这样的过程：  
-![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/java-spring-01-03.jpg)  
-<center>Transactional注解的示意</center>  
-注意：  
-    - CGLib通过ASM动态操作指令生成了被代理类的子类，重写了目标类中的方法，但不能重写`private、final、static`方法  
-- AspectJ  
+注意：CGLib通过ASM动态操作指令生成了被代理类的子类，重写了目标类中的方法，但不能重写`private、final、static`方法  
+- 方式二：AspectJ  
 基于编译期实现
 
-### @Transactional介绍
-##### Spring事务实现方式
+### Spring事务实现方式
 Spring提供了很好事务管理机制，主要分为编程式事务和声明式事务两种：  
-- 编程式事务：是指在代码中手动的管理事务的提交、回滚等操作，代码侵入性比较强  
-- 声明式事务：基于AOP面向切面的，它将具体业务与事务处理部分解耦，代码侵入性很低，所以在实际开发中声明式事务用的比较多。声明式事务也有两种实现方式：  
-    - 基于TX和AOP的xml配置文件方式  
-    - 基于`@Transactional`注解  
+##### 编程式事务
+是指在代码中手动的管理事务的提交、回滚等操作，代码侵入性比较强  
+##### 声明式事务
+基于AOP面向切面的，它将具体业务与事务处理部分解耦，代码侵入性很低，所以在实际开发中声明式事务用的比较多。声明式事务也有两种实现方式：  
+- 基于TX和AOP的xml配置文件方式  
+- 基于`@Transactional`注解，其大致描述为这样的过程：  
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/java-spring-01-03.jpg)  
+<center>Transactional注解的示意</center>  
 
-##### @Transactional注解可以作用于哪些地方?
+### @Transactional可以用在哪?
 `@Transactional`可以作用在接口、类、类方法  
-- 作用于类：当把`@Transactional` 注解放在类上时，表示所有该类的public方法都配置相同的事务属性信息  
-- 作用于方法：当类配置了`@Transactional`，方法也配置了`@Transactional`，方法的事务会覆盖类的事务配置信息  
-- 作用于接口：不推荐这种使用方法，因为一旦标注在Interface上并且配置了Spring AOP 使用CGLib动态代理，将会导致`@Transactional`注解失效  
+##### 作用于类
+当把`@Transactional` 注解放在类上时，表示所有该类的public方法都配置相同的事务属性信息
+### 作用于方法
+当类配置了`@Transactional`，方法也配置了`@Transactional`，方法的事务会覆盖类的事务配置信息
+### 作用于接口
+不推荐这种使用方法，因为一旦标注在Interface上并且配置了Spring AOP 使用CGLib动态代理，将会导致`@Transactional`注解失效  
 
-### 大致的增强流程
+### @Transactional增强流程
 最开始使用`@Transactional`注解的时候，是因为在SpringBoot中使用了JPA，发现查询的时候正常但是保存或者修改东西的时候，无法生效。百度一波后，结果告诉我要在方法上添加@Transactional注解，然后就依葫芦画瓢，使用后就发现数据可以save/update了。虽然大体上知道注解是走的AOP那一套来实现的，但是为什么不加注解就无法操作数据库呢？所以这里就有必要来研究一下了，看一下整个事务增强的大致过程：  
 ![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/java-spring-01-04.jpg)  
 <center>事务的增强执行过程，以cglib代理方式为例</center>  
@@ -98,9 +100,9 @@ if (txAttr == null || !(tm instanceof CallbackPreferringPlatformTransactionManag
 ```
 
 ### 三大接口PlatformTransactionManager、TransactionDefinition、TransactionStatus
-- `PlatformTransactionManager`是事物管理器  
-- `TransactionDefinition`接口定义事物的超时时间、传播属性，隔离级别等  
-- `TransactionStatus`为事物状态信息，如是否为新事务，是否完成等  
+- `PlatformTransactionManager`是事务管理器  
+- `TransactionDefinition`接口定义事务的超时时间、传播属性，隔离级别等  
+- `TransactionStatus`为事务状态信息，如是否为新事务，是否完成等  
 - 三大接口的关系  
 ![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/java-spring-01-05.jpg)  
 <center>三大接口关系</center> 
@@ -146,39 +148,15 @@ public class DefaultTransactionDefinition implements TransactionDefinition, Seri
 
 - 事务的传播属性
 
-<table>
-	<tr >
-	    <td rowspan="4">必须要有事务的</td>
-	    <td>PROPAGATION_MANDATORY</td>
-	    <td>如果当前存在事务，则加入该事务；如果当前没有事务，则抛出异常</td>
-	</tr>
-	<tr>
-	    <td>PROPAGATION_REQUIRES_NEW</td>
-	    <td>每次都创建一个新的事务，如果当前存在事务，则把当前事务挂起再创建一个新事务</td>
-	</tr>
-    <tr>
-	    <td>PROPAGATION_NESTED</td>
-	    <td>如果当前存在事务，则创建一个事务作为当前事务的嵌套事务来运行；如果当前没有事务，则创建一个新的事务</td>
-	</tr>
-	<tr>
-	    <td>PROPAGATION_REQUIRED</td>
-	    <td>如果当前存在事务，则加入该事务；如果当前没有事务，则创建一个新的事务</td>
-	</tr>
-    <tr >
-        <td>事务可有可无</td>
-	    <td>PROPAGATION_SUPPORTS</td>
-	    <td>如果当前存在事务，则加入该事务；如果当前没有事务，则以非事务的方式继续运行</td>
-	</tr>
-    <tr >
-	    <td rowspan="2">不能有事务的</td>
-	    <td>PROPAGATION_NEVER</td>
-	    <td>如果当前存在事务，则抛出异常；如果当前没有事务，则以非事务的方式继续运行</td>
-	</tr>
-    <tr>
-	    <td>PROPAGATION_NOT_SUPPORTED</td>
-	    <td>如果当前存在事务，则把当前事务挂起；如果当前没有事务，则以非事务的方式继续运行</td>
-	</tr>
-</table>
+|对事务的要求|传播属性|具体含义|  
+|-|-|-|  
+|必须要有事务|__PROPAGATION_MANDATORY__|如果当前存在事务，则加入该事务；如果当前没有事务，则抛出异常|  
+|必须要有事务|__PROPAGATION_REQUIRES_NEW__|每次都创建一个新的事务，如果当前存在事务，则把当前事务挂起再创建一个新事务|  
+|必须要有事务|__PROPAGATION_NESTED__|如果当前存在事务，则创建一个事务作为当前事务的嵌套事务来运行；如果当前没有事务，则创建一个新的事务|  
+|必须要有事务|__PROPAGATION_REQUIRED__|如果当前存在事务，则加入该事务；如果当前没有事务，则创建一个新的事务|  
+|事务可有可无|__PROPAGATION_SUPPORTS__|如果当前存在事务，则加入该事务；如果当前没有事务，则以非事务的方式继续运行|  
+|不能有事务的|__PROPAGATION_NEVER__|如果当前存在事务，则抛出异常；如果当前没有事务，则以非事务的方式继续运行|  
+|不能有事务的|__PROPAGATION_NOT_SUPPORTED__|如果当前存在事务，则把当前事务挂起；如果当前没有事务，则以非事务的方式继续运行|  
 
 - 事务挂起是什么？  
     挂起事务，指的是将当前事务的属性如事务名称，隔离级别等属性保存在一个变量中，同时将当前线程中所有和事务相关的ThreadLocal变量设置为从未开启过线程一样。Spring维护着一个当前线程的事务状态，用来判断当前线程是否在一个事务中以及在一个什么样的事务中，**挂起事务后，当前线程的事务状态就好像没有事务**  
