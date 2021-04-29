@@ -2,7 +2,7 @@
 
 ### [这是我的博客 &rarr;](https://www.threejinqiqi.fun/)
 
-### [我的博客参考自Hux大佬的博客模板 &rarr;](http://huxpro.github.io)
+### [我的博客参考自Hux大佬的博客模板 &rarr;](https://github.com/Huxpro/huxpro.github.io)
 
 
 ### 致谢
