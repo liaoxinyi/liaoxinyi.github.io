@@ -86,6 +86,7 @@ Kafka 是基于 TCP 实现的，为了保证可靠的消息传输，这两个参
     - `SerializationException`：序列化失败异常  
     - `RecordToolLargeException`：消息尺寸过大导致  
 到了这里，我不得不有一个疑问：之前在项目里使用的时候都是同步在发送消息，同一时间只能有一个消息在发送，这会造成许多消息无法直接发送，造成消息滞后，无法发挥效益最大化。那有没有异步的方式呢？答案自然是有的
+
 ##### 异步：带callback的Producer#send()
 这里即可做到异步发送消息，还能利用回调对异常情况进行处理：  
 首先实现回调需要定义一个实现了`org.apache.kafka.clients.producer.Callback`的类，这个接口只有一个 onCompletion方法。**其中RecordMetadata 和 Exception 不可能同时为空，消息发送成功时，Exception为null，消息发送失败时，metadata为空**  
