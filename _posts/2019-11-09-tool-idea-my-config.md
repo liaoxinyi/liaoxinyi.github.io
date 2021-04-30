@@ -13,11 +13,20 @@ tags:
 ---
 > 古有云，欲善其工必先利其器。
 
+### Banner在线生成工具
+[来源](https://www.bootschool.net/ascii)
+
+### EasyCode代码生成器
+[参考1](https://blog.csdn.net/qq_38225558/article/details/84479653)  
+[参考2](https://blog.csdn.net/suprezheng/article/details/84558689)
+
 ### Maven相关
 ##### 删除自定义脚手架
 脚手架配置文件路径：C:\Users${user}.IntelliJIdea${version}\system\Maven\Indices  
 文件名：UserArchetypes.xml  
 找到想要删除的自定义脚手架，删除，然后重启IDEA即生效
+##### 解决创建Maven项目缓慢
+【Runner】-【VM Option】中设置-DarchetypeCatalog=internal
 
 ### 输入相关
 ##### 文件编码格式
@@ -27,16 +36,15 @@ tags:
 ##### 自动提示时忽略大小写
 - Editor--general--CodeCompletion--Case sensitive修改为none 
 
-### 快捷操作
-##### SVN&Git
-- SVN忽略iml文件以及idea文件
+### SVN&Git
+##### SVN忽略iml文件以及idea文件
 Editor--File Types--Ignore files and folders中：增加
 `*.iml;`
 注：每个忽略项之间是通过；连接的，最后一项也要以；结尾
-- 自定义SVN操作到工具栏
+##### 自定义SVN操作到工具栏
 添加版本控制(Add to VCS)、更新(update)、提交(Commit File)、历史记录(Show History)、版本对比(Compare with the same Repository Version和Compare with...)、回退（Revert）、Pull和Push等快捷图标到工具栏 
 
-##### 自定义工具栏
+### 自定义工具栏
 鼠标放在工具栏上，右键，选择Customize Menus and Toolbars--Main Toolbar
 - Main ToolbarSettings--VCS Actions
 - 添加Show in Explorer的快捷图标 
