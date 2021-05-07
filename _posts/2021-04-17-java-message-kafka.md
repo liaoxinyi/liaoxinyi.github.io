@@ -1,7 +1,7 @@
 ---
 layout:     post
 title:      "就决定是你了，Kafka-03"
-subtitle:   "如何保证消息不丢失？如何保证消息顺序？"
+subtitle:   "如何保证消息不丢失？如何保证消息顺序？并发消费和批量消费"
 date:       2021-04-17
 author:     "ThreeJin"
 header-mask: 0.5
@@ -10,6 +10,7 @@ header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/kafka
 tags:
     - Java
     - 消息队列
+    - Kafka
 ---
 > 部分资料来源于网络上各位前辈（cxuan、liudashuang2017、织田下总介等）
 
@@ -65,6 +66,8 @@ kafka 选择非同步副本作为首领副本的行为叫做**不完全首领选
 - 通过`ConsumerRebalanceListener`监听接口的实现类+`seek()`特定偏移量处开始处理消息，来保证重平衡后的offset提交准确性  
 
 ### 具体消费者该怎么保证？
+##### 设置合适的Consumer心跳
+`session.timeout.ms`一定要大于`heartbeat.interval.ms`，最好几倍于`heartbeat.interval.ms`，否则消费者组会一直处于rebalance状态  
 ##### subscribe()和assign()
 对于消费者而言，有这两个方法，区别在于  
 - **subscribe()方法**  
@@ -354,3 +357,29 @@ public class HandleRebalance implements ConsumerRebalanceListener {
 ![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/java-kafka-03-02.jpg)  
 <center>queue保证消息顺序</center>   
 
+### 并发消费和批量消费
+之所以提到并发消费和批量消费，是因为在回顾之前的kafka内容的时候，发现在消费端有两个配置项：`factory.setConcurrency(X)`和`factory.setBatchListener(true)`
+##### factory.setConcurrency(X)
+顾名思义，并发消费。`factory.setConcurrency(X)`方法也等价于在`application.properties`中添加`spring.kafka.listener.concurrency=X`，然后使用`@KafkaListener`并发消费  
+- spring的线程封闭策略  
+这里有一个很有意思的事情，在spring中实现消息的并发消费采用的是**线程封闭**的策略，具体实现是在创建监听器容器时，会根据配置的`concurrency`来创建多个`KafkaMessageListenerContainer`，在该类中又有内部类ListenerConsumer，在该内部类中封闭创建了consumer对象。以此来实现主题消息的并发消费  
+- 特点  
+注意，以这种方式进行并发消费时，**实际的并发度受到了主题分区数的限制，当消费线程数大于分区数时，会使多出来的消费者线程一直处于空闲状态。**对此，spring在创建`KafkaMessageListenerContainer`前，对用户配置的`concurrency`值进行了校验，当该值超出主题分区数时，将值设置为实际的分区数  
+同时，以线程封闭的方式实现并发消费，每个消费者线程都需要保持一个TCP连接，如果分区数很大，则会带来很大的系统开销。但是，以该方式实现并发消费，可以保证每个分区消息的顺序消费
+
+##### factory.setBatchListener(true)
+批量消费往往和`ConsumerConfig.MAX_POLL_RECORDS_CONFIG`的属性配置是分不开的，**一个设启用批量消费，一个设置批量消费每次最多消费多少条消息记录**  
+- **ConsumerConfig.MAX_POLL_RECORDS_CONFIG**  
+重点说明一下，设置的`MAX_POLL_RECORDS_CONFIG`，并不是说如果没有达到设定的消息条数就一直等待。官方的解释是：  
+"The maximum number of records returned in a single call to poll()."  
+也就是`MAX_POLL_RECORDS_CONFIG`表示的是一次poll最多返回的记录数，因为每间隔`max.poll.interval.ms`消费者也会自动就调用一次poll。每次poll最多返回`MAX_POLL_RECORDS_CONFIG`条记录  
+- factory.setBatchListener(true)  
+启用批量消费  
+- 对应的其实就是批量的`ConsumerRecord`
+
+##### 单分区的并发消费
+通过上面的分析可以发现，单个分区的时候，`factory.setConcurrency(X)`已经没有什么意义了，因为再多的消费者也会是空闲的。这个时候怎么办呢？可以采取**将消息拉取动作和处理动作分开**  
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/java-kafka-03-03.jpg)  
+<center>单个分区的并发消费</center>   
+以上图示，将主题对应的消费者组进行池化，每个`group`对应一个`consumer`线程池，池中线程数为主题的分区数。  
+每个消费者就是个线程，提交到`consumer`线程池后，不断从服务器拉取消息，同时在消费者线程中，又有一个用来实际处理消息的`MessageHandler`线程池，在获取的消息后，根据每批次的消息创建MessagedoHandle线程，提交到MessagedoHandle线程池进行消息的实际处理

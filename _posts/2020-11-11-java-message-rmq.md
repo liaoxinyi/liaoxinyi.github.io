@@ -10,6 +10,7 @@ header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/java-
 tags:
     - Java
     - 消息队列
+    - RabbitMQ
 ---
 > 资料来源于网络上各位前辈的总结，比如大佬【高广超】、【纯洁的微笑】等
 

@@ -1,7 +1,7 @@
 ---
 layout:     post
 title:      "就决定是你了，Kafka-01"
-subtitle:   "基础概念、Kafka 为何如此之快、消费者(@KafkaListener)/生产者(ProducerRecord)代码"
+subtitle:   "基础概念、Kafka 为何如此之快、消费者(@KafkaListener、ConsumerConfig的几个常量参数)/生产者(ProducerRecord)代码"
 date:       2021-01-11
 author:     "ThreeJin"
 header-mask: 0.5
@@ -10,6 +10,7 @@ header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/kafka
 tags:
     - Java
     - 消息队列
+    - Kafka
 ---
 > 部分资料来源于网络上各位前辈（诗心客、柳树的絮叨叨、芋道源码等）
 
@@ -252,14 +253,11 @@ public class KafkaConsumerConfig {
     }
 }
 ```
-##### 配置类补充
-- consumer参数的一些配置
+##### ConsumerConfig补充
 
 ```java
 public static class Consumer {
-
    private final Ssl ssl = new Ssl();
-
    /**
     * 自动提交间隔时间 设为自动提交时有效
     * 默认 5000 ms
@@ -342,7 +340,8 @@ public static class Consumer {
    private Class<?> valueDeserializer = StringDeserializer.class;
 
    /**
-    * 最大拉取记录数
+    * 最大拉取记录数，对应了消费类中的Record的单次List大小，也即单次poll回来的数据大小
+    * 配合max.poll.interval.ms = 300000， 也就说每间隔max.poll.interval.ms就调用一次poll，而不是等到消息数量累计到设定值才会进行poll
     * 默认 500
     * Maximum number of records returned in a single call to poll().
     */
@@ -350,16 +349,16 @@ public static class Consumer {
 }
 ```
 
-- **session.timeout.ms和heartbeat.interval.ms**
-
-1. **consumer心跳机制**  
+##### Consumer心跳
+- 关键参数：**session.timeout.ms和heartbeat.interval.ms**  
+- **consumer心跳机制**  
 consumer定期向coordinator发送心跳请求，以表明自己还在线；如果session.timeout.ms内未发送请求，coordinator认为其不可用，然后触发rebalance  
-2. 默认值  
-session.timeout.ms：coordinator感知consumer崩溃所需时间，默认10秒  
-heartbeat.interval.ms：consumer发送心跳请求间隔，默认3秒  
-3. **建议**  
-session.timeout.ms一定要大于heartbeat.interval.ms，否则消费者组会一直处于rebalance状态  
-session.timeout.ms最好几倍于heartbeat.interval.ms；这是因为如果因为某一时间段的网络延迟导致coordinator未感知到心跳请求，session.timeout.ms和heartbeat.interval.ms接近的话，会导致consumer组rebalance过于频繁，影响消费性能  
+- 默认值  
+`session.timeout.ms`：coordinator感知consumer崩溃所需时间，默认10秒  
+`heartbeat.interval.ms`：consumer发送心跳请求间隔，默认3秒  
+- **建议**  
+`session.timeout.ms`一定要大于`heartbeat.interval.ms`，否则消费者组会一直处于rebalance状态  
+`session.timeout.ms`最好几倍于`heartbeat.interval.ms`；这是因为如果因为某一时间段的网络延迟导致coordinator未感知到心跳请求，`session.timeout.ms`和`heartbeat.interval.ms`接近的话，会导致consumer组rebalance过于频繁，影响消费性能  
 
 ##### 消费类
 

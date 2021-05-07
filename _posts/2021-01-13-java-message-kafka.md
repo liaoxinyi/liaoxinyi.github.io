@@ -10,6 +10,7 @@ header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/kafka
 tags:
     - Java
     - 消息队列
+    - Kafka
 ---
 > 部分资料来源于网络上各位前辈（cxuan、liudashuang2017、织田下总介等）
 
