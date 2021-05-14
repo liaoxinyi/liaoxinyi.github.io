@@ -372,7 +372,7 @@ public class HandleRebalance implements ConsumerRebalanceListener {
 - **ConsumerConfig.MAX_POLL_RECORDS_CONFIG**  
 重点说明一下，设置的`MAX_POLL_RECORDS_CONFIG`，并不是说如果没有达到设定的消息条数就一直等待。官方的解释是：  
 "The maximum number of records returned in a single call to poll()."  
-也就是`MAX_POLL_RECORDS_CONFIG`表示的是一次poll最多返回的记录数，因为每间隔`max.poll.interval.ms`消费者也会自动就调用一次poll。每次poll最多返回`MAX_POLL_RECORDS_CONFIG`条记录  
+也就是`MAX_POLL_RECORDS_CONFIG`表示的是一次poll最多返回的记录数，因为每间隔`max.poll.interval.ms`**(默认值是5分钟)**消费者也会自动就调用一次poll。每次poll最多返回`MAX_POLL_RECORDS_CONFIG`条记录  
 - factory.setBatchListener(true)  
 启用批量消费  
 - 对应的其实就是批量的`ConsumerRecord`

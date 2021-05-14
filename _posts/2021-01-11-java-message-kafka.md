@@ -341,8 +341,8 @@ public static class Consumer {
 
    /**
     * 最大拉取记录数，对应了消费类中的Record的单次List大小，也即单次poll回来的数据大小
-    * 配合max.poll.interval.ms = 300000， 也就说每间隔max.poll.interval.ms就调用一次poll，而不是等到消息数量累计到设定值才会进行poll
-    * 默认 500
+    * 配合max.poll.interval.ms = 300000， 也就说poll是在一直不停的拉去的，如果单次拉取没有数据的时候，在这个时间段超时后会主动返回，如果在这个时间段内达到了设定的条数也会主动返回
+    * 默认值为500条
     * Maximum number of records returned in a single call to poll().
     */
    private Integer maxPollRecords;
@@ -365,13 +365,13 @@ consumer定期向coordinator发送心跳请求，以表明自己还在线；如�
 ```java
 /**
  * 注解的释义
- * id：消费者的id，当GroupId没有被配置的时候，默认id为GroupId
+ * id：监听器的id：（1）消费者线程命名规则（2）会覆盖消费者工厂的消费组GroupId，可以配合idIsGroup = false来恢复工程中的groupId
  * containerFactory：监听容器工厂，也就是ConcurrentKafkaListenerContainerFactory，一般对应项目中配置的BeanName
  * topics：需要监听的Topic，可监听多个
  * topicPartitions：可配置更加详细的监听信息，必须监听某个Topic中的指定分区，或者从offset为200的偏移量开始监听
  * errorHandler：监听异常处理器，配置BeanName
  * groupId：消费组ID
- * idIsGroup：id是否为GroupId
+ * idIsGroup：id是否为GroupId，值为true或false
  * clientIdPrefix：消费者Id前缀
  * beanRef：真实监听容器的BeanName，默认为"__listener"
  */
