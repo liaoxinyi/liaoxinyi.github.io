@@ -24,7 +24,11 @@ header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/blogH
         </div>
     </a>
     <p class="post-meta">
-        Posted by {% if post.author %}{{ post.author }}{% else %}{{ site.title }}{% endif %} on {{ post.date | date: "%B %-d, %Y" }}
+        {% if page.update-date %}
+            Latest Updated on {{ page.update-date | date: "%B %-d, %Y" }}
+        {% else %}
+            Posted on {{ post.date | date: "%B %-d, %Y" }}
+        {% endif %}
     </p>
 </div>
 <hr>
