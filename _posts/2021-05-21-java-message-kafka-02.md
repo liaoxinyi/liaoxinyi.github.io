@@ -3,6 +3,7 @@ layout:     post
 title:      "就决定是你了，Kafka-02"
 subtitle:   "生产者的深入、分区策略、Kafka压缩、消费者的深入、偏移量、Kafka是怎么查找数据的？"
 date:       2021-01-13
+update-date:  2021-05-21
 author:     "ThreeJin"
 header-mask: 0.5
 catalog: true
@@ -223,16 +224,17 @@ public static byte[] gZip(byte[] data) throws IOException {
 ##### Offset、偏移量
 - 生产者Offset  
 ![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/kafka08.jpg)  
-<center>生产者的offset示意图</center>  
+    <center>生产者的offset示意图</center>  
 不管是多少个生产者，不管规定了这些生产者会写入哪一个分区。但只要生产者写入消息的时候，一定是每一个分区都有一个offset，这个offset就是生产者的offset，同时也是这个分区的最新最大的offset  
 - 消费者Offset  
 ![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/kafka09.jpg)  
-<center>消费者的offset示意图</center>  
-这是某一个分区的offset情况，我们已经知道生产者写入的offset是最新最大的值也就是12，而当Consumer A进行消费时，他从0开始消费，一直消费到了9，它的offset就记录在了9，再比如Consumer B就纪录在了11。等下一次他们再来消费时，他们可以选择接着上一次的位置消费，当然也可以选择从头消费，或者跳到最近的记录并从“现在”开始消费。  
+    <center>消费者的offset示意图</center>  
+这是某一个分区的offset情况，我们已经知道生产者写入的offset是最新最大的值也就是12，而当Consumer A进行消费时，他从0开始消费，一直消费到了9，它的offset就记录在了9，再比如Consumer B就纪录在了11。等下一次他们再来消费时，他们可以选择接着上一次的位置消费，当然也可以选择从头消费，或者跳到最近的记录并从“现在”开始消费
+
 - **总的说明**  
 ![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/kafka10.jpg)  
 ![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/kafka-file-distribution.jpg) 
-<center>kafka的文件组成</center>
+    <center>kafka的文件组成</center>  
     - 每个分区是由多个Segment组成，当Kafka要写数据到一个partition时，它会写入到状态为active的segment中。如果该segment被写满，则一个新的segment将会被新建，然后变成新的“active” segment  
     - **偏移量**：分区中的每一条消息都会被分配的一个连续的id值，该值用于唯一标识分区中的每一条消息  
     - 每个segment中则保存了真实的消息数据。每个Segment对应于一个索引文件与一个日志文件。segment文件的生命周期是由Kafka Server的配置参数所决定的。比如说，server.properties文件中的参数项`log.retention.hours=168`就表示7天后删除老的消息文件  
@@ -250,8 +252,8 @@ public static byte[] gZip(byte[] data) throws IOException {
     - `_consumer_offset`  
         1. `_consumer_offsets`作为kafka的内部topic，用来保存消费组元数据以及对应提交的offset信息  
         2. 每次消费者消费完一批数据需要标记这批数据被消费掉时，需要将消费的偏移量即offset提交掉，这个提交过程其实就是将offset信息写入`_consumer_offsets`的过程  
-        3. 消费者poll数据时会去创建`_consumer_offsets`，当然前提是`_consumer_offsets`不存在的情况下
-        
+        3. 消费者poll数据时会去创建`_consumer_offsets`，当然前提是`_consumer_offsets`不存在的情况下  
+
 - **消息丢失和重复消费**  
     - `重复消费：提交偏移量<消费者实际处理的最后一个消息的偏移量`    
         ![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/kafka07.jpg)   

@@ -2,7 +2,7 @@
 layout:     post
 title:      "一边敲代码一边挖石油"
 subtitle:   "Program or Oil , that is a question"
-date:       2019-10-06 16:22:00
+date:       2019-10-06
 author:     "ThreeJin"
 header-mask: 0.5
 header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/0j3l2y.jpg"

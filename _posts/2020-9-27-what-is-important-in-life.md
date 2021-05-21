@@ -2,7 +2,7 @@
 layout:     post
 title:      "生活之重"
 subtitle:   "What is important in life."
-date:       2020-09-27 09:08:00
+date:       2020-09-27
 author:     "ThreeJin"
 header-mask: 0.2
 header-img: "https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/StockSnap_ET9TSSX4H6.jpg"

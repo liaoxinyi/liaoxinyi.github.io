@@ -2,7 +2,7 @@
 layout:     post
 title:      "博客搭建：这一路的艰辛"
 subtitle:   "No Cross, No Crown"
-date:       2019-10-05 12:00:00
+date:       2019-10-05
 update-date:       2020-10-18
 catalog: true
 header-mask: 0.5

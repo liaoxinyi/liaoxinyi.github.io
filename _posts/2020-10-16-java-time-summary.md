@@ -2,8 +2,8 @@
 layout:     post
 title:      "时间日期那些事"
 subtitle:   "Some java API about time."
-date:       2020-09-28 23:59:00
-update-date:       2020-10-16 23:59:00
+date:       2020-09-28
+update-date:       2020-10-16
 author:     "ThreeJin"
 header-mask: 0.5
 catalog: true

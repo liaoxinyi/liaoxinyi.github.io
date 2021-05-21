@@ -2,7 +2,7 @@
 layout:     post
 title:      "new String(\"字面量\")时发生了什么？"
 subtitle:   "字符串常量池详细解读"
-date:       2020-10-19 23:59:00
+date:       2020-10-19
 author:     "ThreeJin"
 header-mask: 0.3
 catalog: true

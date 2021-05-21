@@ -3,7 +3,7 @@ layout:     post
 title:      "让我的IDEA好用到飞起"
 subtitle:   "My configuration of IDEA."
 color:      "white"
-date:       2019-11-09 23:59:00
+date:       2019-11-09
 author:     "ThreeJin"
 header-mask: 0.6
 catalog: true
