@@ -2,7 +2,6 @@
 layout:     post
 title:      "这只兔子该怎么玩儿？"
 subtitle:   "生产者的Confirm/Return、消费者的Auto/Manual、队列的监控、动态队列"
-date:       2021-01-09
 update-date:  2021-03-20
 author:     "ThreeJin"
 header-mask: 0.5

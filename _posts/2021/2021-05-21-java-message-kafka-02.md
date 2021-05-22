@@ -2,7 +2,6 @@
 layout:     post
 title:      "就决定是你了，Kafka-02"
 subtitle:   "生产者的深入、分区策略、Kafka压缩、消费者的深入、偏移量、Kafka是怎么查找数据的？"
-date:       2021-01-13
 update-date:  2021-05-21
 author:     "ThreeJin"
 header-mask: 0.5
