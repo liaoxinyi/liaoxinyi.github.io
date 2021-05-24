@@ -2,7 +2,7 @@
 layout:     post
 title:      "春天一样的代码长啥样？Spring-01"
 subtitle:   "Transactional注解到底干了啥？Spring的事务传播属性、为什么有的事务不生效？"
-date:       2021-04-07
+update-date:  2021-04-07
 author:     "ThreeJin"
 header-mask: 0.5
 catalog: true
@@ -183,7 +183,7 @@ public interface TransactionStatus extends TransactionExecution, SavepointManage
 - 没有指定合适的`transactionManager`参数，默认的transactionManager并不是支持在一个事务中操作多个类型的数据库  
 - 如果AOP使用了JDK动态代理（**Spring默认的代理方式**），对象内部方法互相调用时是不会触发切面增强的，也就是说此时`@Transactional注解`无效  
     很简单，因为切面是在目标方法之外的，目标方法的内部是通过调用原始方法来执行的，所以此时不是代理对象的方法，自然切面就不会生效了。也就是说：**只有当事务方法被当前类以外的代码调用时，才会由Spring生成的代理对象来管理**  
-    可以通过自己注入自己的方式来调用或者把方法抽取到另外一个service  
+    可以通过自己注入自己的方式来调用或者把方法抽取到另外一个service，或者`将该Service自己注入自己，然后记得配置@Lazy属性，最后通过该注入的bean来调用该方法即可`  
 - 如果AOP使用了CGLIB代理且事务方法未被`public`修饰，因为在AOP的增强逻辑里面，不是`public`则不会获取`@Transactional`的属性配置信息。所以，`protected、private` 修饰的方法上使用 `@Transactional` 注解时，虽然不会有任何报错，但是事务依旧无效  
 - 异常被`catch`“吃了”导致`@Transactional`失效  
 
