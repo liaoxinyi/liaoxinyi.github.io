@@ -16,9 +16,9 @@ tags:
 
 ### 前言
 之前在线上环境中遇到消息堆积的问题，排查出来原因是消费者抛异常导致AKS未反馈。当时遇到这个问题的时候，才想起来，其实还没有真正梳理一下有关RabbitMQ的一些东西，所以一直计划着写这一篇文章。后面遇到有关的问题，也会持续在这篇文章基础上进行更新  
-### 常见可实现消息队列的协议
+### 消息队列的基础
 ##### 为什么需要消息中间件？ 
-依旧是老样子，一个产品的产生必定是为了解决某一个场景问题。对于一个大型的软件系统来说，它会有很多的组件或者说模块或者说子系统或者（subsystem or Component or submodule）。那么这些模块的如何通信？这和传统的IPC有很大的区别。传统的IPC很多都是在单一系统上的，模块耦合性很大，不适合扩展（Scalability）；如果使用socket那么不同的模块的确可以部署到不同的机器上，但是还是有很多问题需要解决。比如信息的发送者和接收者如何维持这个连接，如果一方的连接中断，这期间的数据如何方式丢失？如何降低发送者和接收者的耦合度？如何做到load balance？有效均衡接收者的负载？等等  
+    依旧是老样子，一个产品的产生必定是为了解决某一个场景问题。对于一个大型的软件系统来说，它会有很多的组件或者说模块或者说子系统或者（subsystem or Component or submodule）。那么这些模块的如何通信？这和传统的IPC有很大的区别。传统的IPC很多都是在单一系统上的，模块耦合性很大，不适合扩展（Scalability）；如果使用socket那么不同的模块的确可以部署到不同的机器上，但是还是有很多问题需要解决。比如信息的发送者和接收者如何维持这个连接，如果一方的连接中断，这期间的数据如何方式丢失？如何降低发送者和接收者的耦合度？如何做到load balance？有效均衡接收者的负载？等等  
 消息中间件最主要的作用是解耦，中间件最标准的用法是生产者生产消息传送到队列，消费者从队列中拿取消息并处理，生产者不用关心是谁来消费，消费者不用关心谁在生产消息，从而达到解耦的目的。在分布式的系统中，消息队列也会被用在很多其它的方面，比如：分布式事务的支持，RPC的调用等等  
 总结如下：  
 - **消息队列的主要应用场景：解耦、消峰、广播、最终一致性**  
@@ -66,29 +66,27 @@ tags:
 ![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/java-message-amqp-structure.jpg)
 <center>RabbitMQ实现的AMQP</center>  
 - **RabbitMQ Server**  
-也叫broker server，**它不是运送食物的卡车，而是一种传输服务**。原话是RabbitMQ isn’t a food truck, it’s a delivery service。他的角色就是维护一条从Producer到Consumer的路线，保证数据能够按照指定的方式进行传输。但是这个保证也不是100%的保证，但是对于普通的应用来说这已经足够了。当然对于商业系统来说，可以再做一层数据一致性的guard，就可以彻底保证系统的一致性了  
+也叫broker server，**它不是运送食物的卡车，而是一种传输服务**。他的角色就是维护一条从`Producer`到`Consumer`的路线，保证数据能够按照指定的方式进行传输。但是这个保证也不是100%的保证，但是对于普通的应用来说这已经足够了。当然对于商业系统来说，可以再做一层数据一致性的guard，就可以彻底保证系统的一致性了  
 - **Client P**  
-也叫Producer，数据的发送方。createmessages and publish (send) them to a broker server (RabbitMQ).一个Message有两个部分：payload（有效载荷）和label（标签）。payload顾名思义就是传输的数据。label是exchange的名字或者说是一个tag，它描述了payload，而且RabbitMQ也是通过这个label来决定把这个Message发给哪个Consumer。**AMQP仅仅描述了label，而RabbitMQ决定了如何使用这个label的规则**  
+也叫Producer，数据的发送方。一个Message有两个部分：`payload（有效载荷）`和`label（标签）`。payload顾名思义就是传输的数据。label是exchange的名字或者说是一个tag，它描述了payload，而且RabbitMQ也是通过这个label来决定把这个Message发给哪个Consumer。**AMQP仅仅描述了label，而RabbitMQ决定了如何使用这个label的规则**  
 - **Client C**  
-也叫Consumer，数据的接收方。Consumersattach to a broker server (RabbitMQ) and subscribe to a queue。把queue比作是一个有名字的邮箱。当有Message到达某个邮箱后，RabbitMQ把它发送给它的某个订阅者即Consumer。当然可能会把同一个Message发送给很多的Consumer。在这个Message中，只有payload，label已经被删掉了。对于Consumer来说，它是不知道谁发送的这个信息的。就是协议本身不支持。但是当然了如果Producer发送的payload包含了Producer的信息就另当别论了  
+也叫Consumer，数据的接收方。把queue比作是一个有名字的邮箱。当有Message到达某个邮箱后，RabbitMQ把它发送给它的某个订阅者即Consumer。当然可能会把同一个Message发送给很多的Consumer。在这个Message中，只有payload，label已经被删掉了。对于Consumer来说，它是不知道谁发送的这个信息的。就是协议本身不支持。但是当然了如果Producer发送的payload包含了Producer的信息就另当别论了  
 
 ##### RabbitMQ特点
 RabbitMQ是一个开源的AMQP实现，最初起源于金融系统，用于在分布式系统中存储转发消息，在易用性、扩展性、高可用性等方面表现不俗。服务器端用Erlang语言编写，支持多种客户端，如：Python、Ruby、.NET、Java、JMS、C、PHP、ActionScript、XMPP、STOMP等，支持AJAX。用于在分布式系统中存储转发消息，在易用性、扩展性、高可用性等方面表现不俗    
-- 可靠性  
+- **可靠性**  
 持久化、传输确认及发布确认  
-- 灵活路由  
+- **灵活路由**  
 一些内置交换器提供典型的路由功能，针对更复杂的路由功能，可以将多个交换器绑定在一起，也可以通过插件机制来实现自己的交换器  
-- 扩展性  
-多个RabbitMQ节点可以组成一个集群，可以动态扩展集群中节点  
-- 高可用性  
-队列可以在集群中的机器上设置镜像，使得在部分节点出现问题的情况下队列依然可用  
-- 多种协议  
-除了原生支持AMQP协议，还支持STOMP、MQTT等多种消息中间件协议  
-- 多语言客户端  
-支持常用语言，如Java、Python、Ruby、PHP、C#、JavaScript等  
-- 管理界面  
+- **扩展性和高可用**  
+    - 多个RabbitMQ节点可以组成一个集群，可以动态扩展集群中节点    
+    - 队列可以在集群中的机器上设置镜像，使得在部分节点出现问题的情况下队列依然可用  
+- **支持多种协议以及多语言客户端**  
+    - 除了原生支持`AMQP协议`，还支持`STOMP、MQTT`等多种消息中间件协议  
+    - 支持常用语言，如Java、Python、Ruby、PHP、C#、JavaScript等  
+- **管理界面**  
 提供简易用户界面( 默认`http://localhost:15672` )，可以监控和管理消息、集群中的节点等  
-- 插件机制  
+- **插件机制**  
 提供了许多插件，以实现从多方面进行扩展，也可以编写自己的插件  
 
 ##### 几个概念
@@ -102,11 +100,11 @@ RabbitMQ是一个开源的AMQP实现，最初起源于金融系统，用于在�
 交换机只会用于转发消息，不会做存储，如果没有队列绑定到这个交换机的话，它会直接丢弃掉生产者发送过来的消息，在启用ack模式后，交换机找不到队列会返回错误    
 - **绑定（Binding）**  
 既然说到了绑定，那是靠什么绑定的呢？靠的就是**路由键**，消息到交换机的时候，交换机会转发到对应的队列中，那么究竟转发到哪个队列，就要根据该路由键。至于绑定，就是交换机需要和队列相绑定，**注意是多对多关系，不一定只会一对多**  
-1. binding key：可以认为属于队列，在绑定（Binding）Exchange与Queue的同时，一般会指定一个binding key。在绑定多个Queue到同一个Exchange的时候，这些Binding允许使用相同的binding key  
-2. routing key：这个就是我们说得最多的路由键，消费者将消息发送给Exchange时，一般会指定一个routing key，Exchange此时就会将该条消息发送给binding key和routing key匹配的队列里面去    
+1. **<font color=red>binding key</font>**：可以认为属于队列，在绑定Exchange与Queue的同时，一般会指定一个binding key。在绑定多个Queue到同一个Exchange的时候，这些Binding允许使用相同的binding key  
+2. **<font color=red>routing key</font>**：这个就是我们说得最多的路由键，消费者将消息发送给Exchange时，一般会指定一个routing key，Exchange此时就会将该条消息发送给binding key和routing key匹配的队列里面去    
 
 - **连接（Connection）**
-就是一个TCP的连接。Producer和Consumer都是通过TCP连接到RabbitMQ Server的。以后我们可以看到，程序的起始处就是建立这个TCP连接，一般会创建一个Connection，然后在此基础上创建多个Channel 
+**就是一个TCP的连接**。Producer和Consumer都是通过TCP连接到RabbitMQ Server的。以后我们可以看到，程序的起始处就是建立这个TCP连接，一般会创建一个Connection，然后在此基础上创建多个Channel 
 - **通道（Channel）**
 这其实是一个虚拟的连接，也就是逻辑意义上的链接。一般情况是程序起始建立TCP连接，第二步就是建立这个Channel  
 客户端通过在Connection上创建不同的AMQP信道（Channel），每个信道都会被指派一个唯一的ID。信道是建立在Connection之上的虚拟连接，RabbitMQ的每条指令都是基于信道的，代码层次中，我们大部分的业务操作是在Channel这个接口中完成的，包括定义Queue、定义Exchange、绑定Queue与Exchange、发布消息等  
@@ -207,8 +205,8 @@ public class RabbitMqConfig {
             key = "${支持配置文件}"), concurrency = "1-5")
 ```
 ###### Spring Cloud Stream方式
-- 步骤  
-maven坐标：  
+- pom依赖  
+
 ```txt
 <dependency> 
     <groupId>org.springframework.cloud</groupId> 
@@ -216,7 +214,8 @@ maven坐标：
     <version>X.X.X.RELEASE</version><!--版本号需自己指定--> 
 </dependency>
 ```
-1. 配置application.properties  
+
+- 配置application.properties  
 
 ```txt
 spring.cloud.stream.binders.dispatchServiceMsgCacheConsumeChannel.type=rabbit
@@ -241,7 +240,8 @@ spring.cloud.stream.rabbit.bindings.自定义的标识.consumer.dead-letter-rout
 spring.cloud.stream.rabbit.bindings.自定义的标识.consumer.dead-letter-queue-name=xxxxxxx
 ```
 
-2. 使用@Input完成通道配置  
+- 使用@Input完成通道配置
+
 ```java
 public interface RmqInputChannel {
     //名称与配置文件中【自定义的标识】保持一致
@@ -252,7 +252,8 @@ public interface RmqInputChannel {
 }
 ```
 
-3. 消息接收类和方法  
+- 消息接收类和方法
+
 ```java
 //绑定之前完成了配置的通道接口
 @EnableBinding(RmqInputChannel.class)
@@ -279,7 +280,8 @@ public class RmqMsgService {
 
 ### RabbitMQ使用-生产者
 ###### Spring Cloud Stream方式
-1. 配置application.properties  
+
+- 配置application.properties  
 
 ```txt
 spring.cloud.stream.binders.dispatchServiceMsgCacheConsumeChannel.type=rabbit
@@ -291,7 +293,8 @@ spring.cloud.stream.rabbit.bindings.自定义的标识.producer.exchangeType=dir
 spring.cloud.stream.bindings.自定义的标识.content-type=application/json
 ```
 
-2. 使用@Output完成通道配置  
+- 使用@Output完成通道配置
+
 ```java
 public interface RmqOutPutChannel {
     //名称与配置文件中【自定义的标识】保持一致
@@ -302,7 +305,8 @@ public interface RmqOutPutChannel {
 }
 ```
 
-3. 消息发送类
+- 消息发送类
+
 ```java
 //消费发送类
 @EnableBinding(RmqOutPutChannel.class)
@@ -319,7 +323,8 @@ public class RmqSendMsgService {
 
 ```
 
-4. 消息发送
+- 消息发送
+
 ```java
 //消息发送调用
 @Autowired
