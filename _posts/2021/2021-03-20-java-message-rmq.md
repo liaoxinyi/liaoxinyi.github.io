@@ -1,7 +1,7 @@
 ---
 layout:     post
 title:      "这只兔子该怎么玩儿？"
-subtitle:   "生产者的Confirm/Return、消费者的Auto/Manual、队列的监控、动态队列"
+subtitle:   "消息不丢失/不重复消费方案、生产者的Confirm/Return、消费者的Auto/Manual、队列的监控、动态队列"
 update-date:  2021-03-20
 author:     "ThreeJin"
 header-mask: 0.5
@@ -16,14 +16,23 @@ tags:
 
 ### 前言
 终于能够有机会把这一个月的一些积累沉淀一下了，这个月在产品中主要是接触的都是消息中间件，rabbitMQ、activeMQ和kafka。前两个都在原来的基础之上，详细用了一些深入的特性，kafka暂时还是偏基础一点的使用。这里主要记录一下在使用rabbitMQ的时候一些想法  
+### 消息不丢失方案
+- 消息生产者开启事务机制或者**publisher confirm**机制，以确保消息可以可靠传输到RabbitMQ中  
+- 队列做持久化处理，以确保RabbitMQ服务器故障时不会丢失消息  
+- 消费者通过手动ack的方式去确认已经正确消费的消息，以避免在消费端引起不必要的消息丢失  
+- 备份交换器  
+通过声明交换器(`channel.exchangeDeclare`)时添加 `alternate-exchange`参数 来实现，也可通过Policy(策略)的方式实现，如果备份交换器和mandatory参数一同使用，则前者的优先级更高  
+备份交换器可以在不设置mandatory参数的情况下，将未路由的消息存储在RabbitMQ中（未路由成功的消息通过备份交换器，路由到其绑定队列），再在需要的时候去处理这些消息  
+如果没有设置mandatory参数，消息在未路由成功的情况下将会丢失；如果设置了mandatory参数，那么需要添加ReturnListener逻辑，生产者的代码将变复杂  
 
-
+### 不重复消费方案
+主要通过消费者来控制，参考[接口幂等性的处理方式](https://www.threejinqiqi.fun/2021/03/28/java-idempotency/)
 ### 生产者的Confirm/Return
-- 配置启用生产者的发布确认和发布退回机制  
+- **配置**  
 `spring.rabbitmq.publisher-confirms = true`  
 `spring.rabbitmq.publisher-returns = true`  
 
-- 分别实现RabbitTemplate中两个接口  
+- **分别实现RabbitTemplate中两个接口**  
 
 ```java
 /**
@@ -42,15 +51,15 @@ public interface ReturnCallback {
 }
 ```
 
-- 将以上两个实现类注入RabbitTemplate实例中  
+- **将以上两个实现类注入RabbitTemplate实例中**  
 
 `rabbitTemplate.setReturnCallback(messageReturnCallback);`  
 `rabbitTemplate.setConfirmCallback(messageConfirmCallback); `  
 
 ### 消费者的Auto/Manual
-这里主要是指消费者在消费rmq消息发生异常时的auto/manual/none这三种ack的返回方式  
+这里主要是指消费者在消费rmq消息发生异常时的`auto/manual/none`这三种ack的返回方式  
 ##### 说明
-RabbitMQ对异常是一无所知的，它只根据收到的ack / nack / reject 以及 requeue 来处理该消息
+RabbitMQ对异常是一无所知的，它只根据收到的`ack/nack/reject`以及 `requeue属性` 来处理该消息
 
 异常是在消费端内部处理的
 
@@ -65,9 +74,9 @@ RabbitMQ对异常是一无所知的，它只根据收到的ack / nack / reject �
 
 - 当抛出`ImmediateAcknowledgeAmqpException`异常，则视为成功消费，确认该消息
 
-- 当抛出`AmqpRejectAndDontRequeueException`异常的时候，则消息会被拒绝，且 requeue = false
+- 当抛出`AmqpRejectAndDontRequeueException`异常的时候，则消息会被拒绝，且 `requeue = false`
 
-AmqpRejectAndDontRequeueException异常除了可以代码主动抛出外，在一天rmq消费重试消费的次数超过限制后会自己抛出
+`AmqpRejectAndDontRequeueException`异常除了可以代码主动抛出外，在rmq消费重试消费的次数超过限制后会自己抛出
 
 - 其他的异常，则消息会被拒绝，且`requeue = true`
 

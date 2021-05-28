@@ -1,7 +1,7 @@
 ---
 layout:     post
 title:      "这只兔子该怎么玩儿？"
-subtitle:   "Channel的API、死信/临时/自动过期/延时队列、保证消息不丢失方案"
+subtitle:   "Channel的玩儿法、死信/临时/自动过期/延时队列"
 date:       2020-12-29
 author:     "ThreeJin"
 header-mask: 0.5
@@ -37,7 +37,9 @@ tags:
  x-expires 参数控制 queue 被自动删除前可以处于未使用状态的时间。未使用的意思是 queue 上没有任何 consumer ，queue 没有被重新声明，并且在过期时间段内未调用过 basic.get 命令。该方式可用于，例如，RPC-style 的回复 queue, 其中许多 queue 会被创建出来，但是却从未被使用  
  参数值以毫秒为单位，如果该参数设置为 1000 ，则表示该 queue 如果在 1s之内未被使用则会被删除  
 
-##### basicPublish
+##### 几个方法
+
+- **basicPublish**  
 生产者发布一条消息。如果交换器不存在，会产生通道协议异常，并且关闭当前通道  
 `void basicPublish(String exchange, String routingKey, boolean mandatory, boolean immediate, AMQP.BasicProperties props, byte[] body) throws IOException`  
 Parameters:  
@@ -48,7 +50,7 @@ immediate - 如果设置了immediate标签则为true。true: 如果交换器路�
 props - 消息的基本属性集。成员有：contentType,contentEncoding,headers(Map<String,Object>),deliveryMode(消息投递模式),priority(消息优先级),correlationId(关联请求和其调用RPC之后的回复),replyTo(回调队列),expiration,messageId,timestamp,type,userId,appId,clusterId  
 body - 消息体  
 
-##### exchangeDeclare
+- **exchangeDeclare**  
 声明交换器  
 `AMQP.Exchange.DeclareOk exchangeDeclare(String exchange, BuiltinExchangeType type, boolean durable, boolean autoDelete, boolean internal, Map<String,Object> arguments) throws IOException`  
 Parameters:  
@@ -64,7 +66,7 @@ arguments - 可以传一些其他参数
 声明一个已经存在指定名字的交换器，如果交换器不存在会引发404通道异常  
 `AMQP.Exchange.DeclareOk exchangeDeclarePassive(String name) throws IOException`  
 
-##### exchangeDelete
+- **exchangeDelete**  
 删除交换器  
 `AMQP.Exchange.DeleteOk exchangeDelete(String exchange, boolean ifUnused) throws IOException`  
 Parameters:  
@@ -73,7 +75,7 @@ ifUnused - 是否删除无客户端使用的交换器
 **exchangeDeleteNoWait**  
 与exchangeDelete一样，但是没有返回AMQP.Exchange.DeleteOk，表示该方法无需等待服务器返回删除结果  
 
-##### exchangeBind
+- **exchangeBind**  
 绑定一个交换器到另一个交换器上  
 `AMQP.Exchange.BindOk exchangeBind(String destination, String source, String routingKey, Map<String,Object> arguments) throws IOException`  
 Parameters:  
@@ -84,14 +86,14 @@ arguments - 一些其他的绑定参数
 **exchangeBindNoWait**  
 与exchangeBind一样，但是没有返回AMQP.Exchange.BindOk，表示该方法无需等待服务器返回绑定结果  
 
-##### exchangeUnbind
+- **exchangeUnbind**  
 解绑交换器与交换器的绑定  
 `AMQP.Exchange.UnbindOk exchangeUnbind(String destination, String source, String routingKey, Map<String,Object> arguments) throws IOException`  
 Parameters: 参数与exchangeBind一致  
 **exchangeUnbindNoWait**  
 与exchangeUnbind一样，但是没有返回AMQP.Exchange.UnbindOk，表示该方法无需等待服务器返回解绑结果  
 
-##### queueDeclare
+- **queueDeclare**  
 声明一个队列  
 `AMQP.Queue.DeclareOk queueDeclare(String queue, boolean durable, boolean exclusive, boolean autoDelete, Map<String,Object> arguments) throws IOException`  
 Parameters:  
@@ -105,7 +107,7 @@ queueDeclareNoWait
 queueDeclarePassive  
 声明一个已经存在指定名字的队列，如果队列不存在，或在另一个Connection中为排他队列，会引发IO异常  
   
-##### queueDelete  
+- **queueDelete**  
 删除一个队列  
 `AMQP.Queue.DeleteOk queueDelete(String queue, boolean ifUnused, boolean ifEmpty) throws IOException`  
 Parameters:  
@@ -115,7 +117,7 @@ ifEmpty - 是否删除空的队列
 queueDeleteNoWait  
 与queueDelete一样，但是没有返回AMQP.Queue.DeleteOk，表示该方法无需等待服务器返回队列删除结果  
   
-##### queueBind  
+- **queueBind**  
 绑定一个队列到交换器  
 `AMQP.Queue.BindOk queueBind(String queue, String exchange, String routingKey, Map<String,Object> arguments) throws IOException`  
 Parameters:  
@@ -126,29 +128,29 @@ arguments - 传递一些其他参数
 queueBindNoWait  
 与queueBind一样，但是没有返回AMQP.Queue.BindOk，表示该方法无需等待服务器返回队列绑定结果  
   
-##### queueUnbind  
+- **queueUnbind**    
 解绑交换器的一个队列  
 `AMQP.Queue.UnbindOk queueUnbind(String queue, String exchange, String routingKey, Map<String,Object> arguments) throws IOException`  
   
-##### queuePurge  
+- **queuePurge**  
 清空给定队列内容  
 `AMQP.Queue.PurgeOk queuePurge(String queue) throws IOException`  
   
-##### basicGet  
+- **basicGet**  
 获取队列中的一条消息  
 `GetResponse basicGet(String queue, boolean autoAck) throws IOException`  
 Parameters:  
 queue - 队列名  
 autoAck - 是否需要自动应答  
   
-##### basicAck  
+- **basicAck**  
 应答一条或多条消息。 AMQP.Basic.GetOk 或 AMQP.Basic.Deliver 的方法里提供了传递标签的值（deliveryTag），并且该方法中包含已被应答的消息  
 `void basicAck(long deliveryTag, boolean multiple) throws IOException`  
 Parameters:  
 deliveryTag - 来自接收消息的AMQP.Basic.GetOk 或 AMQP.Basic.Deliver 的标签（tag）  
 multiple - true: 应答所有消息，匹配给定传递标签的消息，false: 只应答匹配给定传递标签的消息  
   
-##### basicNack  
+- **basicNack**  
 拒绝一条或多条消息  
 `void basicNack(long deliveryTag, boolean multiple, boolean requeue) throws IOException`  
 Parameters:  
@@ -156,14 +158,14 @@ deliveryTag - 来自接收消息的AMQP.Basic.GetOk 或 AMQP.Basic.Deliver 的�
 multiple - true: 拒绝所有未被确认的消息，也包括匹配给定传递标签的消息，false: 只拒绝匹配给定传递标签的消息。  
 requeue - true: 被拒绝的消息会重新进入队列，而不是被丢弃或进入死信队列。如果队列只有一个消费者，消息会被尽可能放入原来的位置；如果队列有多个消费者，消息会被尽可能放入队头的位置  
   
-##### basicReject  
+- **basicReject**  
 拒绝一条消息  
 `void basicReject(long deliveryTag, boolean requeue) throws IOException`  
 Parameters:  
 deliveryTag - 来自接收消息的AMQP.Basic.GetOk 或 AMQP.Basic.Deliver 的标签（tag）  
 requeue - true: 被拒绝的消息会重新进入队列，而不是被丢弃或进入死信队列  
   
-##### basicConsume  
+- **basicConsume**  
 启动一个消费者  
 `String basicConsume(String queue, boolean autoAck, String consumerTag, boolean noLocal, boolean exclusive, Map<String,Object> arguments, DeliverCallback deliverCallback, CancelCallback cancelCallback, ConsumerShutdownSignalCallback shutdownSignalCallback) throws IOException`  
 Parameters:  
@@ -210,17 +212,17 @@ DefaultConsumer clientConsumer = new DefaultConsumer(channel) {
 channel.basicConsume(declareOk.getQueue(), Boolean.FALSE, queueName+"的消费者", clientConsumer);
 ```
 
-##### basicCancel  
+- **basicCancel**  
 通过消费者标签，取消一个消费者  
 `void basicCancel(String consumerTag) throws IOException`  
   
-##### basicRecover  
+- **basicRecover**  
 请求Broker重新发送未应答的消息  
 `AMQP.Basic.RecoverOk basicRecover(boolean requeue) throws IOException`  
 Parameters:  
 requeue - true：消息可能传递给不同的消费者  
   
-##### basicQos  
+- **basicQos**  
 限制客户端数据流量  
 `void basicQos(int prefetchSize, int prefetchCount, boolean global) throws IOException`  
 Parameters:  
@@ -336,7 +338,7 @@ public void buildDeadExchangeAndQueue() {
 在声明队列时，将属性durable设置为'false'，则该队列为非持久化队列，设置成'true'时，该队列就为持久化队列  
 
 ##### 队列级别消息过期  
-就是为每个队列设置消息的超时时间。只要给队列设置x-message-ttl 参数，就设定了该队列所有消息的存活时间，时间单位是毫秒。如果声明队列时指定了死信交换器，则过期消息会成为死信消息  
+就是为每个队列设置消息的超时时间。只要给队列设置`x-message-ttl` 参数，就设定了该队列所有消息的存活时间，时间单位是毫秒。如果声明队列时指定了死信交换器，则过期消息会成为死信消息  
 当队列消息的TTL 和消息TTL都被设置，时间短的TTL设置生效。如果将一个过期消息发送给RabbitMQ，该消息不会路由到任何队列，而是直接丢弃  
 为消息设置TTL有一个问题：RabbitMQ只对处于队头的消息判断是否过期（即不会扫描队列），所以，很可能队列中已存在死消息，但是队列并不知情。这会影响队列统计数据的正确性，妨碍队列及时释放资源  
 
@@ -345,16 +347,16 @@ public void buildDeadExchangeAndQueue() {
 RabbitMQ延迟队列，主要是借助消息的TTL（Time to Live）和死信exchange（Dead Letter Exchanges：DLX）来实现  
 
 ##### 什么时候会用到延时队列？
-- 延迟消费  
+- **延迟消费**  
 在订单系统中，一个用户 下单之后通常有30分钟的时间进行支付，如果30分钟之内没有支付成功 ，那么这个订单将进行异常处理（如： 关闭订单 ），这时就可以使用延迟队列来处理这些订单  
-- 延迟重试  
+- **延迟重试**  
 主要是处理一些异常信息，如：发送失败、消费失败，可能当时由于网络抖动的问题，暂时无法访问，需要延迟再进行重试（重新发送，重新消费）  
 
 ##### 消息TTL/队列TTL的区别  
-- 队列TTL  
+- **队列TTL**  
 通过队列的属性来设置TTL ， 队列中的所有消息都有相同的过期时间  
 一旦消息过期，就会立即从队列中抹去 （ 因为过期的消息肯定处于队列的头部 ）  
-- 消息TTL   
+- **消息TTL**   
 对消息进行单独设置 ，每条消息的TTL可以设置不同的过期时间  
 即使消息过期，也不会马上从队列中抹去，因为每条消息是否过期是在即将投递到消费者之前判定的  
 - 分析  
@@ -362,18 +364,9 @@ RabbitMQ延迟队列，主要是借助消息的TTL（Time to Live）和死信exc
 第二种方法里，每条消息的过期时间不同，如果要删除所有过期消息，势必要扫描整个队列，所以不如等到此消息即将被投递时再判定是否过期，如果过期，再进行删除  
 
 ##### 实践
-- 延迟消费  
+- **延迟消费**  
 例如：生产者发送消息到Queue_10s，预先设置Queue_10s的队列TTL为10s，当消息过期后，经过DLX，进入Dead_Queue。消费者则消费Dead_Queue中的消息，此时的消息则是延迟消费  
-- 延迟重试  
+- **延迟重试**  
 生产者发送消息到普通队列，消费者正常消费队列  
 生产者1发送失败，发送消息到Queue_20s，消息过期后，经过DLX，进入Dead_Queue，生产者2订阅DLX，获取数据再次尝试发送
 消费者1消费失败，发送消息到Queue_20s，消息过期后，经过DLX，进入Dead_Queue，消费者2订阅DLX，获取数据再次尝试消费
-
-### 保证消息不丢失方案
-- 消息生产者开启事务机制或者publisher confirm机制，以确保消息可以可靠传输到RabbitMQ中  
-- 消息和队列都要持久化处理，以确保RabbitMQ服务器故障时不会丢失消息  
-- 消费者要将autoAck设置为false，然后通过手动确认的方式去确认已经正确消费的消息，以避免在消费端引起不必要的消息丢失  
-- 备份交换器  
-通过声明交换器(channel.exchangeDeclare)时添加 alternate-exchange参数 来实现，也可通过Policy(策略)的方式实现，如果备份交换器和mandatory参数一同使用，则前者的优先级更高  
-备份交换器可以在不设置mandatory参数的情况下，将未路由的消息存储在RabbitMQ中（未路由成功的消息通过备份交换器，路由到其绑定队列），再在需要的时候去处理这些消息  
-如果没有设置mandatory参数，消息在未路由成功的情况下将会丢失；如果设置了mandatory参数，那么需要添加ReturnListener逻辑，生产者的代码将变复杂  
