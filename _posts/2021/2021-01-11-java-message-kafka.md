@@ -194,6 +194,8 @@ public class KafkaConsumerConfig {
     private String kafkaConsumerHeartbeatIntervalMsConfig;
     @Value("${kafka.consumer.max-poll-records-config}")
     private int kafkaConsumerMaxPollRecordsConfig;
+    @Value("${kafka.consumer.max-poll-interval}")
+    private int kafkaConsumerMaxPollInterval;
     @Value("${kafka.consumer.auto-commit-interval}")
     private int kafkaConsumerAutoCommitInterval;
     @Value("${kafka.listener.concurrency}")
@@ -243,6 +245,7 @@ public class KafkaConsumerConfig {
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.PARTITION_ASSIGNMENT_STRATEGY_CONFIG, RoundRobinAssignor.class.getName());
         props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, kafkaConsumerMaxPollRecordsConfig);
+        props.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, kafkaConsumerMaxPollInterval);
         //建议动态获取集群的地址
         List<String> bootstrapServers=XXXX;
         if (CollectionUtils.isEmpty(bootstrapServers)) {
