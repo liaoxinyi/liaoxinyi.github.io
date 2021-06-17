@@ -1,8 +1,8 @@
 ---
 layout:     post
 title:      "拥抱Java8-01"
-subtitle:   "Lambda"
-date:       2021-01-24
+subtitle:   "Lambda、Stream、Builder"
+update-date:       2021-06-17
 author:     "ThreeJin"
 header-mask: 0.5
 catalog: true
@@ -11,6 +11,7 @@ tags:
     - Java
 
 ---
+> 2021.6.17 更新builder内容
 > 资料来源于知乎上各位前辈（古时的风筝、Java团长等）
 
 ### 前言
@@ -515,4 +516,201 @@ System.out.println("员工扣税薪资总和：" + sum);
 // stream的reduce
 Optional<Integer> sum2 = personList.stream().map(Person::getSalary).reduce(Integer::sum);
 System.out.println("员工薪资总和：" + sum2.get());
+```
+
+### Builder
+首先，大量参数构造器的缺点：  
+- 参数过多时，代码太长，极不优雅，维护极难  
+- 不能判断出哪些是必须参数，哪些是可选参数，可选参数也得给个默认值  
+- 分不清变量值对应哪个变量，如顺序对应错，很容易造成错误  
+- 构造器参数增减时，会影响所有创建该对象的地方，影响扩展性
+
+**构造器正确的用法是只给出几个必选、重要参数的构造器，而不是把所有参数放在一个构造器中**
+
+这个时候就应该祭出** Builder 模式**了
+##### 基础版
+
+```java
+public class Task {
+
+    private long id;
+    private String name;
+    private String content;
+    private int type;
+    private int status;
+    private Date finishDate;
+
+    private Task(TaskBuilder taskBuilder) {
+        this.id = taskBuilder.id;
+        this.name = taskBuilder.name;
+        this.content = taskBuilder.content;
+        this.type = taskBuilder.type;
+        this.status = taskBuilder.status;
+        this.finishDate = taskBuilder.finishDate;
+    }
+
+
+    public static class TaskBuilder {
+
+        private long id;
+        private String name;
+        private String content;
+        private int type;
+        private int status;
+        private Date finishDate;
+
+        public TaskBuilder(long id, String name) {
+            this.id = id;
+            this.name = name;
+        }
+
+        public TaskBuilder content(String content) {
+            this.content = content;
+            return this;
+        }
+
+        public TaskBuilder type(int type) {
+            this.type = type;
+            return this;
+        }
+
+        public TaskBuilder status(int status) {
+            this.status = status;
+            return this;
+        }
+
+        public TaskBuilder finishDate(Date finishDate) {
+            this.finishDate = finishDate;
+            return this;
+        }
+
+        public Task build(){
+            return new Task(this);
+        }
+
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public int getType() {
+        return type;
+    }
+
+    public int getStatus() {
+        return status;
+    }
+
+    public Date getFinishDate() {
+        return finishDate;
+    }
+
+    @Override
+    public String toString() {
+        return "Task{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", content='" + content + '\'' +
+                ", type=" + type +
+                ", status=" + status +
+                ", finishDate=" + finishDate +
+                '}';
+    }
+
+}
+```
+
+原理：  
+- 在 Bean 类里面新建一个静态内部类：XxxBuilder  
+- 把 Bean 类所有参数复制到 XxxBuilder，然后在 XxxBuilder 新建必须参数的构造器，其他参数使用变量名作为方法然后返回自身（this）以便形成链式调用  
+- 在 Bean 类里面新建一个接收 XxxBuilder 参数的私有构造器，避免使用 new 创建对象  
+- 在 XxxBuilder 类新建一个 build 方法开始构建 Bean 类，也是作为链式调用的结束  
+
+使用方法：  
+使用方式如下，先创建构造器，然后在每个方法后使用 . 带出所有方法，一目了然，最后调用 build 方法以结束链式调用创建 bean
+
+```java
+Task task = new Task.TaskBuilder(99, "紧急任务")
+            .type(1)
+            .content("处理一下这个任务")
+            .status(0)
+            .finishDate(new Date())
+            .build();
+```
+
+##### Lombok版本
+
+```java
+@Builder
+public class LombokTask {
+    private long id;
+    private String name;
+    private String content;
+    private int type;
+    private int status;
+    private Date finishDate;
+}
+
+//使用
+LombokTask lombokTask = LombokTask.builder()
+            .id(99)
+            .name("紧急任务")
+            .type(1)
+            .content("处理一下这个任务")
+            .status(0)
+            .finishDate(new Date())
+            .build();
+```
+
+##### Java8版本
+Java 8 带来了函数式接口编程，所以在 Java 8 中可以一个实现通用的 Builder：
+
+```java
+public class GenericBuilder<T> {
+
+    private final Supplier<T> instantiator;
+
+    private List<Consumer<T>> instanceModifiers = new ArrayList<>();
+
+    public GenericBuilder(Supplier<T> instantiator) {
+        this.instantiator = instantiator;
+    }
+
+    public static <T> GenericBuilder<T> of(Supplier<T> instantiator) {
+        return new GenericBuilder<T>(instantiator);
+    }
+
+    public <U> GenericBuilder<T> with(BiConsumer<T, U> consumer, U value) {
+        Consumer<T> c = instance -> consumer.accept(instance, value);
+        instanceModifiers.add(c);
+        return this;
+    }
+
+    public T build() {
+        T value = instantiator.get();
+        instanceModifiers.forEach(modifier -> modifier.accept(value));
+        instanceModifiers.clear();
+        return value;
+    }
+}
+
+
+//使用方式
+Java8Task java8Task = GenericBuilder.of(Java8Task::new)
+            .with(Java8Task::setId, 99L)
+            .with(Java8Task::setName, "紧急任务")
+            .with(Java8Task::setType, 1)
+            .with(Java8Task::setContent, "处理一下这个任务")
+            .with(Java8Task::setStatus, 0)
+            .with(Java8Task::setFinishDate, new Date())
+            .build();
 ```
