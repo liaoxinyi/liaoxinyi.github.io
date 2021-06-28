@@ -40,15 +40,15 @@ tags:
 ##### 绝情：Producer#send()
 这是我之前最为常用的模式，现在才知道这其实是发送之后便不再理会发送结果，算是比较绝情了，什么问题都没管。官方叫这种为：Fire and Fogret，挺形象的
 
-**kafka的Producer是线程安全的，用户可以非常非常放心的在多线程中使用**  
+**kafka的Producer是线程安全的，用户可以非常非常放心的在多线程中使用**
 
 根据上一篇中的实战代码，kafka发送消息的时候，主要还是靠Producer的send方法，在这之前需要对一些基础属性进行设置：  
 - **bootstrap.servers**  
 该属性指定`broker`的地址清单，地址的格式为 `host:port`，比如"xx.xx.xx.xx:9090"。**清单里其实不需要包含所有的 broker 地址，生产者会从给定的 broker 里查找到其他的 broker 信息。不过建议至少要提供两个 broker 信息，一旦其中一个宕机，生产者仍然能够连接到集群上**  
 - **key.serializer**  
-broker 需要接收到序列化之后的 key/value值，所以生产者发送的消息需要经过序列化之后才传递给 Kafka Broker。生产者需要知道采用何种方式把 Java 对象转换为字节数组。`key.serializer` 必须被设置为一个实现了`org.apache.kafka.common.serialization.Serializer` 接口的类，生产者会使用这个类把键对象序列化为字节数组。  
-java代码：`props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, IntegerSerializer.class);props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);`  
-Serializer 是一个接口，它表示类将会采用何种方式序列化，它的作用是把对象转换为字节，实现了 Serializer 接口的类主要有 **`ByteArraySerializer`（Kafka 默认使用的序列化器）**、`StringSerializer`、`IntegerSerializer` 等，要注意的一点：**key.serializer 是必须要设置的，即使发送消息的时候没有指定key只发送value**。  
+&emsp;&emsp;broker 需要接收到序列化之后的 key/value值，所以生产者发送的消息需要经过序列化之后才传递给 Kafka Broker。生产者需要知道采用何种方式把 Java 对象转换为字节数组。`key.serializer` 必须被设置为一个实现了`org.apache.kafka.common.serialization.Serializer` 接口的类，生产者会使用这个类把键对象序列化为字节数组。  
+&emsp;&emsp;java代码：`props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, IntegerSerializer.class);props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);`  
+&emsp;&emsp;Serializer 是一个接口，它表示类将会采用何种方式序列化，它的作用是把对象转换为字节，实现了 Serializer 接口的类主要有 **`ByteArraySerializer`（Kafka 默认使用的序列化器）**、`StringSerializer`、`IntegerSerializer` 等，要注意的一点：**key.serializer 是必须要设置的，即使发送消息的时候没有指定key只发送value**。  
 - **acks**  
     - acks 参数指定了要有多少个分区副本接收消息，生产者才认为消息是写入成功的。**此参数对消息丢失的影响较大**  
     - `acks = 0`：就表示生产者也不知道自己产生的消息是否被服务器接收了，它才知道它写成功了。如果发送的途中产生了错误，生产者也不知道，它也比较懵逼，因为没有返回任何消息。这就类似于 UDP 的运输层协议，只管发，服务器接受不接受它也不关心。  
@@ -89,9 +89,8 @@ Kafka 是基于 TCP 实现的，为了保证可靠的消息传输，这两个参
 到了这里，我不得不有一个疑问：之前在项目里使用的时候都是同步在发送消息，同一时间只能有一个消息在发送，这会造成许多消息无法直接发送，造成消息滞后，无法发挥效益最大化。那有没有异步的方式呢？答案自然是有的
 
 ##### 异步：带callback的Producer#send()
-这里即可做到异步发送消息，还能利用回调对异常情况进行处理：  
-首先实现回调需要定义一个实现了`org.apache.kafka.clients.producer.Callback`的类，这个接口只有一个 onCompletion方法。**其中RecordMetadata 和 Exception 不可能同时为空，消息发送成功时，Exception为null，消息发送失败时，metadata为空**  
-然后，结合上面分析的两种类别的异常，此时可以进行分别处理：  
+&emsp;&emsp;这里即可做到异步发送消息，还能利用回调对异常情况进行处理：首先实现回调需要定义一个实现了`org.apache.kafka.clients.producer.Callback`的类，这个接口只有一个 onCompletion方法。**其中RecordMetadata 和 Exception 不可能同时为空，消息发送成功时，Exception为null，消息发送失败时，metadata为空**  
+&emsp;&emsp;然后，结合上面分析的两种类别的异常，此时可以进行分别处理：  
 ```java
 ProducerRecord<String, String> producerRecord = new ProducerRecord<String, String>("CustomerCountry", "Huston", "America");
 producer.send(producerRecord,new DemoProducerCallBack());
@@ -143,8 +142,8 @@ producer.close();
 - producer.close(timeout): 超时时，强制关闭
 
 ### 生产者分区策略
-Kafka 对于数据的读写是以分区为粒度的，分区可以分布在多个主机（Broker）中，这样每个节点能够实现独立的数据写入和读取，并且能够通过增加新的节点来增加 Kafka 集群的吞吐量，通过分区部署在多个 Broker 来实现负载均衡的效果  
-**这里有一点需要注意：比如已有X个分区了，而且历史消息也已经储存完毕，此时新增分区，只有新消息才会到新的分区，历史消息还是保持不动了**，这里就涉及到一个问题，如果历史有大量的历史消息需要被处理的时候，其实调大分区数量是无效的，同时增加服务节点也不行，因为kafka允许同组的多个分区被一个consumer消费，但是不允许一个分区被不同组的多个consumer消费，即**一个partition在同一个时刻只有一个consumer instance在消费**
+&emsp;&emsp;Kafka 对于数据的读写是以分区为粒度的，分区可以分布在多个主机（Broker）中，这样每个节点能够实现独立的数据写入和读取，并且能够通过增加新的节点来增加 Kafka 集群的吞吐量，通过分区部署在多个 Broker 来实现负载均衡的效果  
+&emsp;&emsp;**这里有一点需要注意：比如已有X个分区了，而且历史消息也已经储存完毕，此时新增分区，只有新消息才会到新的分区，历史消息还是保持不动了**，这里就涉及到一个问题，如果历史有大量的历史消息需要被处理的时候，其实调大分区数量是无效的，同时增加服务节点也不行，因为kafka允许同组的多个分区被一个consumer消费，但是不允许一个分区被不同组的多个consumer消费，即**一个partition在同一个时刻只有一个consumer instance在消费**
 ##### 顺序轮询
 Kafka 的分区策略指的就是将生产者发送到哪个分区的算法。Kafka提供了默认的分区策略(**顺序轮巡**)，同时也支持自定义分区策略，主要是靠显示配置生产者端的参数 `Partitioner#partition()`，位于`org.apache.kafka.clients.producer`下  
 ```java
@@ -166,7 +165,7 @@ List<PartitionInfo> partitions = cluster.partitionsForTopic(topic);
 return ThreadLocalRandom.current().nextInt(partitions.size());
 ```
 ##### 按消息键保序
-这个策略也叫做 key-ordering 策略，Kafka 中每条消息都会有自己的key，一旦消息被定义了 Key，那么你就可以保证同一个 Key 的所有消息都进入到相同的分区里面，由于每个分区下的消息处理都是有顺序的，故这个策略被称为按消息键保序策略  
+&emsp;&emsp;这个策略也叫做 key-ordering 策略，Kafka 中每条消息都会有自己的key，一旦消息被定义了 Key，那么你就可以保证同一个 Key 的所有消息都进入到相同的分区里面，由于每个分区下的消息处理都是有顺序的，故这个策略被称为按消息键保序策略  
 
 ```java
 List<PartitionInfo> partitions = cluster.partitionsForTopic(topic);
@@ -174,11 +173,10 @@ return Math.abs(key.hashCode()) % partitions.size();
 ```
 
 ### Kafka 压缩
-为什么启用压缩？说白了就是消息太大，需要变小一点 来使消息发的更快一些。其实这一点有点类似于Feign优化中的Gzip压缩，是一种经典的用 CPU 时间去换磁盘空间或者 I/O 传输量的思想，希望以 CPU 开销带来更少的磁盘占用或更少的网络 I/O 传输。
+&emsp;&emsp;为什么启用压缩？说白了就是消息太大，需要变小一点 来使消息发的更快一些。其实这一点有点类似于Feign优化中的Gzip压缩，是一种经典的用 CPU 时间去换磁盘空间或者 I/O 传输量的思想，希望以 CPU 开销带来更少的磁盘占用或更少的网络 I/O 传输。
 ##### 什么是Kafka 压缩？
-Kafka 的消息分为两层：消息集合 和 消息。一个消息集合中包含若干条日志项，而日志项才是真正封装消息的地方。Kafka 底层的消息日志由一系列消息集合日志项组成。Kafka 通常不会直接操作具体的一条条消息，它总是在消息集合这个层面上进行写入操作  
+&emsp;&emsp;Kafka 的消息分为两层：消息集合 和 消息。一个消息集合中包含若干条日志项，而日志项才是真正封装消息的地方。Kafka 底层的消息日志由一系列消息集合日志项组成。Kafka 通常不会直接操作具体的一条条消息，它总是在消息集合这个层面上进行写入操作  
 在 Kafka 中，压缩会发生在两个地方：Kafka Producer 和 Kafka Consumer
-
 ##### 怎么玩？
 - Producer先压缩：`properties.put("compression.type", "gzip");`（使用GZIP的算法进行压缩）  
 
@@ -203,8 +201,8 @@ public static byte[] gZip(byte[] data) throws IOException {
 
 ### 消费者的那些事儿
 ##### 水平扩展提升消费能力
-因为Kafka 消费者从属于消费者群组。一个群组中的消费者订阅的都是相同的主题，每个消费者接收主题一部分分区的消息，**一个partition在同一个时刻只有一个consumer instance在消费**，而且一般来说，消费者的个数都会建议和生产者的分区个数相同，这样既不会有消费不过来的消费者，也不会有空闲的消费者。  
-如果应用需要读取全量消息，那么请为该应用设置一个消费组；如果该应用消费能力不足，那么可以考虑在这个消费组里增加消费者  
+&emsp;&emsp;因为Kafka 消费者从属于消费者群组。一个群组中的消费者订阅的都是相同的主题，每个消费者接收主题一部分分区的消息，**一个partition在同一个时刻只有一个consumer instance在消费**，而且一般来说，消费者的个数都会建议和生产者的分区个数相同，这样既不会有消费不过来的消费者，也不会有空闲的消费者。  
+&emsp;&emsp;如果应用需要读取全量消息，那么请为该应用设置一个消费组；如果该应用消费能力不足，那么可以考虑在这个消费组里增加消费者  
 ##### 消费者组
 消费组不用多说，有个小细节需要注意：  
 `group.id` 这个属性不是必须的，它指定了 KafkaConsumer 是属于哪个消费者群组。创建不属于任何一个群组的消费者也是可以的   
