@@ -232,19 +232,20 @@ public static byte[] gZip(byte[] data) throws IOException {
 
 - **总的说明**  
 ![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/kafka10.jpg)  
-![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/kafka-file-distribution.jpg) 
-    <center>kafka的文件组成</center>  
-    - 每个分区是由多个Segment组成，当Kafka要写数据到一个partition时，它会写入到状态为active的segment中。如果该segment被写满，则一个新的segment将会被新建，然后变成新的“active” segment  
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/kafka-file-distribution.jpg)  
+![](https://gitee.com/liaoxinyiqiqi/my-blog-images/raw/master/img/kafka-02-01.jpg)  
+    <center>kafka的存储结构</center>  
+    - 每个分区是由多个`Segment`组成，当要写数据到一个分区时，它会写入到状态为`active`的`Segment`中。如果该`Segment`被写满，则一个新的`Segment`将会被新建，然后变成新的状态为`active`的`Segment`  
     - **偏移量**：分区中的每一条消息都会被分配的一个连续的id值，该值用于唯一标识分区中的每一条消息  
-    - 每个segment中则保存了真实的消息数据。每个Segment对应于一个索引文件与一个日志文件。segment文件的生命周期是由Kafka Server的配置参数所决定的。比如说，server.properties文件中的参数项`log.retention.hours=168`就表示7天后删除老的消息文件  
-    - 每个segment有以下3种数据文件：
+    - 每个`Segment`有以下3种数据文件：
         1. **00000000000000000000.index**：基于偏移量的索引文件，存放着消息的offset和其对应的物理位置，是稀松索引,稀松索引可以加快速度，因为 index 不是为每条消息都存一条索引信息，而是每隔几条数据才存一条 index 信息，这样 index 文件其实很小。kafka在写入日志文件的时候，同时会写索引文件（.index和.timeindex）。默认情况下，有个参数`log.index.interval.bytes`限定了在日志文件写入多少数据，就要在索引文件写一条索引，默认是4KB，写4kb的数据然后在索引里写一条索引  
-        2. **00000000000000000000.log**：它是segment文件的数据文件，用于存储实际的消息。该文件是二进制格式的。log文件是存储在 `ConcurrentSkipListMap` 里的，是一个map结构，**key是文件名（offset）**，value是内容，这样在查找指定偏移量的消息时，用二分查找法就能快速定位到消息所在的数据文件和索引文件  
+        2. **00000000000000000000.log**：它是`Segment`文件的数据文件，用于存储实际的消息。该文件是二进制格式的。log文件是存储在 `ConcurrentSkipListMap` 里的，是一个map结构，**key是文件名（offset）**，value是内容，这样在查找指定偏移量的消息时，用二分查找法就能快速定位到消息所在的数据文件和索引文件  
         3. **00000000000000000000.timeindex**：基于时间戳的索引文件  
-        4. 命名规则：partition全局的第一个segment从0开始，**后续每个segment文件名为上一个segment文件最后一条消息的offset值**。没有数字则用0填充  
-    - broker收到发布消息后会往对应partition的最后一个segment上添加该消息，当某个segment上的消息条数达到配置值或消息发布时间超过阈值时，segment上的消息会被flush到磁盘，只有flush到磁盘上的消息订阅者才能订阅到，segment达到一定的大小后将不会再往该segment写数据，broker会创建新的segment  
+        4. 命名规则：partition全局的第一个`Segment`从0开始，**后续每个`Segment`文件名为上一个`Segment`文件最后一条消息的offset值**。没有数字则用0填充  
+    - `Segment`文件的生命周期是由Kafka Server的配置参数所决定的（具体可在`server.properties`文件中的参数项`log.retention.hours=168`进行配置）  
+    - broker收到发布消息后会往对应partition的最后一个`Segment`上添加该消息，当某个`Segment`上的消息条数达到配置值或消息发布时间超过阈值时，`Segment`上的消息会被flush到磁盘，只有flush到磁盘上的消息订阅者才能订阅到，`Segment`达到一定的大小后将不会再往该`Segment`写数据，broker会创建新的`Segment`  
     - 新数据加在文件的末尾(调用内部方法)，不论文件多大，该操作的时间复杂度都是O(1)，但是在查找某个 offset 的时候，是顺序查找，如果文件很大的话，查找的效率就会很低  
-    - **根据Offset的值通过二分查快速定位到具体的segment文件，再进入该segment中的.index文件中，同样利用二分法查找相对 Offset 小于或者等于指定的相对 Offset 的索引条目中最大的那个相对 Offset，然后对应的值为.log中存储的物理偏移位置，然后打开.log文件，从对应物理位置开始顺序扫描直到找到 Offset 为给定值的那条 Message**  
+    - **根据Offset的值通过二分查快速定位到具体的`Segment`文件，再进入该`Segment`中的.index文件中，同样利用二分法查找相对 Offset 小于或者等于指定的相对 Offset 的索引条目中最大的那个相对 Offset，然后对应的值为.log中存储的物理偏移位置，然后打开.log文件，从对应物理位置开始顺序扫描直到找到 Offset 为给定值的那条 Message**  
     - 无论消息是否被消费，Kafka 都会保存所有的消息：**基于时间，默认配置是 168 小时（7 天）**、**基于大小，默认配置是 1073741824**  
     - Kafka 读取特定消息的时间复杂度是 O(1)，所以这里**删除过期的文件并不会提高 Kafka 的性能**  
     - `poll()方法`：消费者在每次调用该方法进行定时轮询的时候，会返回由生产者写入 Kafka 但是还没有被消费者消费的记录，因此可以追踪到哪些记录是被群组里的哪个消费者读取的。消费者可以使用 Kafka 来追踪消息在分区中的位置（偏移量）  
